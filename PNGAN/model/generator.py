@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from layers.blur_pool import BlurPool2d
+from PNGAN.layers.blur_pool import BlurPool2d
 
 
 class FCA(nn.Module):
