@@ -2,7 +2,7 @@
 
 ## Progress
 ### Phase 1: Prepare Basic Model
- - [x] Finish Model Define
+ - [x] Finish PNGAN Model
  - [ ] Implement the loss function
  - [ ] Finish the training process
  - [ ] Collect random dataset or use external dataset (find and download)
