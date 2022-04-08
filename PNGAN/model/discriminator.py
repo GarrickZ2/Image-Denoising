@@ -21,8 +21,19 @@ class Discriminator(nn.Module):
             self.conv1, self.relu1,
             self.conv2, self.bn2, self.relu2,
             self.conv3, self.relu3,
-            self.conv4, self.sigmoid
+            self.conv4
         )
+        self.untransformed_output = None
+        self.output = None
 
     def forward(self, x):
-        return self.main(x)
+        result = self.main(x)
+        self.untransformed_output = result
+        self.output = self.sigmoid(result)
+        return self.output
+
+    def get_untransformed_output(self):
+        return self.untransformed_output
+
+    def get_output(self):
+        return self.output

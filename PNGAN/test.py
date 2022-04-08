@@ -1,5 +1,13 @@
+from PIL import Image
+import matplotlib
+from matplotlib import pyplot as plt
+matplotlib.use('TkAgg')
 import torch
+import numpy as np
 import unittest
+import utility
+from option import args
+from model import RIDModel
 from model.generator import *
 from model.discriminator import Discriminator
 
@@ -57,9 +65,29 @@ class TestFlow(unittest.TestCase):
         print('Output Data Size: ', output_data.shape)
 
     def test_generator(self):
-        print('Test SMNet')
         input_data = torch.rand(1, 3, 128, 128, device=device)
         generator = Generator(3, 64)
         output_data = generator(input_data)
         print('Input Data Size: ', input_data.shape)
         print('Output Data Size: ', output_data.shape)
+
+
+class TestRIDNet(unittest.TestCase):
+    def test_ridmodel(self):
+        img = Image.open('a.png')
+        img = img.convert('RGB')
+        img = np.array(img.getdata()).reshape((img.size[0], img.size[1], 3))
+        plt.imshow(img)
+        plt.show()
+        # input_data = torch.rand(1, 3, 128, 128, device=device)
+        input_data = torch.from_numpy(img)
+        # checkpoint = utility.checkpoint(args)
+        # model = RIDModel(args, checkpoint)
+        # output_data = model(input_data, 10)
+        # print('Input Data Size: ', input_data.shape)
+        # print('Output Data Size: ', output_data.shape)
+        # print(output_data)
+        # plt.imshow(output_data)
+        # plt.show()
+
+

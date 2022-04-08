@@ -3,8 +3,10 @@
 ## Progress
 ### Phase 1: Prepare Basic Model
  - [x] Finish PNGAN Model
- - [ ] Implement the loss function
+ - [x] Implement the loss function
+ - [x] Finish the RIDNet Model
  - [ ] Finish the training process
+ - [ ] Train the RIDNet Model
  - [ ] Collect random dataset or use external dataset (find and download)
  - [ ] Download and pre-process the training and testing data
  - [ ] Write the synthesis image generator

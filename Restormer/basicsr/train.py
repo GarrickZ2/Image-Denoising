@@ -135,7 +135,7 @@ def main():
     # torch.backends.cudnn.deterministic = True
 
     # automatic resume ..
-    state_folder_path = 'experiments/{}/training_states/'.format(opt['name'])
+    state_folder_path = 'experiment/{}/training_states/'.format(opt['name'])
     import os
     try:
         states = os.listdir(state_folder_path)
@@ -157,7 +157,7 @@ def main():
     else:
         resume_state = None
 
-    # mkdir for experiments and logger
+    # mkdir for experiment and logger
     if resume_state is None:
         make_exp_dirs(opt)
         if opt['logger'].get('use_tb_logger') and 'debug' not in opt[

@@ -158,7 +158,7 @@ if __name__ == '__main__':
         keywords='computer vision, restoration, super resolution',
         url='https://github.com/xinntao/BasicSR',
         packages=find_packages(
-            exclude=('options', 'datasets', 'experiments', 'results',
+            exclude=('options', 'datasets', 'experiment', 'results',
                      'tb_logger', 'wandb')),
         classifiers=[
             'Development Status :: 4 - Beta',
