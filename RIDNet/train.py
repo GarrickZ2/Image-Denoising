@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from torchsummary import summary
+from torchvision.transforms import Resize
 
 from model.RIDNet import RIDNet
 from datasets.clean_noisy_dataset import *
@@ -67,7 +68,8 @@ def train():
         Normalize(),
         ToTensor()
     ])
-    train_dataset = SIDDDataset(root_dir='', transform=train_transform)
+
+    train_dataset = SIDDDataset(root_dir='../data/SIDD_Small_sRGB_Only', transform=train_transform)
     # train_dataset = Denoising_dataset(img_dir='your dataset path',
     #                                   train_val='train',
     #                                   transform=train_transform)
@@ -82,7 +84,7 @@ def train():
         ToTensor()
     ])
 
-    val_dataset = SIDDDataset(root_dir='', transform=val_transform, data_type='val')
+    val_dataset = SIDDDataset(root_dir='../data/SIDD_Small_sRGB_Only', transform=val_transform, data_type='val')
     # val_dataset = Denoising_dataset(img_dir='your dataset path',
     #                                 train_val='val',
     #                                 transform=val_transform)
@@ -91,10 +93,11 @@ def train():
                             batch_size=BATCH_SIZE,
                             shuffle=False,
                             num_workers=0)
+    print('Loaded Dataset')
 
     model = RIDNet(in_channels=1, out_channels=1, num_feautres=128)
     model.to(device)
-    summary(model, (1, 512, 512), batch_size=BATCH_SIZE)
+    # summary(model, (1, 512, 512), batch_size=BATCH_SIZE)
 
     criterion = L1_Loss().to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
@@ -104,6 +107,7 @@ def train():
     writer = SummaryWriter('runs/')
 
     best_val_loss = inf
+    print('Prepare to train')
 
     for epoch in range(1, EPOCHS + 1):
         train_loss = 0.
@@ -123,7 +127,7 @@ def train():
             optimizer.step()
 
             train_loss += loss.item()
-            loop.set_description(f'Epoch [{epoch}/{EPOCHS}')
+            loop.set_description(f'Epoch [{epoch}/{EPOCHS}, train loss: {loss.item()}')
 
         current_lr = scheduler.optimizer.param_groups[0]['lr']
         writer.add_scalar('lr', current_lr, epoch)
@@ -141,15 +145,13 @@ def train():
 
                 loss = criterion(pred, clean)
                 val_loss += loss.item()
-                loop.set_description(f'valid')
+                loop.set_description(f'Epoch [{epoch}/{EPOCHS}')
 
         train_loss = train_loss / len(train_loader)
         val_loss = val_loss / len(val_loader)
 
         writer.add_scalar('Loss/train', train_loss, epoch)
         writer.add_scalar('Loss/val', val_loss, epoch)
-
-        print(f'Epoch: {epoch}\t train_loss: {train_loss}\t val_loss: {val_loss}')
 
         if best_val_loss > val_loss:
             # print('=' * 100)
@@ -164,6 +166,7 @@ def train():
                         'optimizer_state_dict': optimizer.state_dict(),
                         'loss': criterion},
                        f'weight/{str(criterion).split("()")[0]}_model_{epoch:05d}_valloss_{best_val_loss:.4f}.pth')
+        print(f'Epoch: {epoch}\t train_loss: {train_loss}\t val_loss: {val_loss} best_val_loss: {best_val_loss}')
 
     writer.close()
 
