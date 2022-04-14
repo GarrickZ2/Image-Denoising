@@ -5,6 +5,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 
+
 class SIDDDataset(Dataset):
     """
     https://www.eecs.yorku.ca/~kamel/sidd/index.php
@@ -12,9 +13,13 @@ class SIDDDataset(Dataset):
     CLEAN_IMG_NAME = "GT_SRGB_010.PNG"
     NOISY_IMG_NAME = "NOISY_SRGB_010.PNG"
 
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir, transform=None, data_type='train'):
         self.root_dir = root_dir
         self.dirs = pd.Series(glob.glob(f"{root_dir}/Data/**"))
+        if data_type == 'train':
+            self.dirs = self.dirs[:152]
+        elif data_type == 'val':
+            self.dirs = self.dirs[-8:]
         self.transform = transform
         
     def __len__(self):
