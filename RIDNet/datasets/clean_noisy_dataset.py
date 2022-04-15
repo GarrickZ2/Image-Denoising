@@ -18,15 +18,18 @@ class SIDDDataset(Dataset):
         self.root_dir = root_dir
         self.dirs = pd.Series(glob.glob(f"{root_dir}/Data/**"))
         if data_type == 'train':
-            self.dirs = self.dirs[:152]
+            self.dirs = self.dirs[:144]
         elif data_type == 'val':
-            self.dirs = self.dirs[-8:]
+            self.dirs = self.dirs[-16:]
         self.transform = transform
+        self.data_type = data_type
         
     def __len__(self):
         return len(self.dirs)
     
     def __getitem__(self, idx):
+        if self.data_type == 'val':
+            idx += 144
         if torch.is_tensor(idx):
             idx = idx.tolist()
 

@@ -4,6 +4,19 @@ import numpy as np
 import torch
 
 
+class Resize(object):
+    def __init__(self, size=(512, 512)):
+        self.size = size
+
+    def __call__(self, data):
+        noisy, clean = data['noisy'], data['clean']
+
+        noisy = cv2.resize(noisy, self.size, interpolation=cv2.INTER_AREA)
+        clean = cv2.resize(clean, self.size, interpolation=cv2.INTER_AREA)
+
+        return {'noisy': noisy, 'clean': clean}
+
+
 class ToTensor(object):
     def __call__(self, data):        
         noisy, clean = data['noisy'], data['clean']
@@ -22,6 +35,7 @@ class ToTensor(object):
         data = {'noisy': noisy, 'clean': clean}
 
         return data
+
 
 class Normalize(object):
     def __call__(self, data):

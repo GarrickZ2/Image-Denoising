@@ -10,7 +10,6 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from torchsummary import summary
-from torchvision.transforms import Resize
 
 from model.RIDNet import RIDNet
 from datasets.clean_noisy_dataset import *
@@ -54,6 +53,7 @@ def train():
     print(device)
 
     train_transform = transforms.Compose([
+        Resize(),
         Random_Brightness(p=0.5,
                           sigma1=0.3),
         Horizontal_Flip(p=0.5),
@@ -80,6 +80,7 @@ def train():
                               num_workers=0)
 
     val_transform = transforms.Compose([
+        Resize(),
         Normalize(),
         ToTensor()
     ])
@@ -90,7 +91,7 @@ def train():
     #                                 transform=val_transform)
 
     val_loader = DataLoader(val_dataset,
-                            batch_size=BATCH_SIZE,
+                            batch_size=int(BATCH_SIZE/2),
                             shuffle=False,
                             num_workers=0)
     print('Loaded Dataset')
@@ -113,7 +114,7 @@ def train():
         train_loss = 0.
         val_loss = 0.
 
-        loop = tqdm(enumerate(train_loader), total=len(train_loader), leave=False)
+        loop = tqdm(enumerate(train_loader), total=len(train_loader))
 
         model.train()
         for i, data in loop:
@@ -135,7 +136,7 @@ def train():
 
         model.eval()
         with torch.no_grad():
-            loop = tqdm(enumerate(val_loader), total=len(val_loader), leave=False)
+            loop = tqdm(enumerate(val_loader), total=len(val_loader))
 
             for j, data in loop:
                 noisy = data['noisy'].to(device)
@@ -145,7 +146,7 @@ def train():
 
                 loss = criterion(pred, clean)
                 val_loss += loss.item()
-                loop.set_description(f'Epoch [{epoch}/{EPOCHS}')
+                loop.set_description(f'Epoch [{epoch}/{EPOCHS} validation error: {loss.item()}')
 
         train_loss = train_loss / len(train_loader)
         val_loss = val_loss / len(val_loader)
@@ -161,6 +162,9 @@ def train():
             best_val_loss = val_loss
 
             # torch.save(model, 'model.pth')
+            if not os.path.exists('weight'):
+                os.mkdir('weight')
+
             torch.save({'epoch': epoch,
                         'model_state_dict': model.state_dict(),
                         'optimizer_state_dict': optimizer.state_dict(),
