@@ -5,3 +5,4 @@ __pycache__
 data/
 runs/
 log*
+PNGAN/experiment/test
