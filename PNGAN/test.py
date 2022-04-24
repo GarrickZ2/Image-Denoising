@@ -14,7 +14,7 @@ class TestFlow(unittest.TestCase):
         print('Test Discriminator')
         input_data = torch.rand(1, 3, 128, 128, device=device)
         model_d = Discriminator()
-        output_data = model_d(input_data)
+        output_data, _ = model_d(input_data)
         print('Input Data: ', input_data, input_data.shape)
         print('Output Data: ', output_data, output_data.shape)
 
@@ -72,7 +72,7 @@ class TestRIDNet(unittest.TestCase):
         input_data_1 = torch.rand(1, 3, 128, 128, device=device)
         input_data_2 = torch.rand(1, 3, 128, 128, device=device)
         model_d = Discriminator()
-        output_1 = model_d(input_data_1)
+        output_1, _ = model_d(input_data_1)
         loss = AlignmentLoss(model_d)
         output_data = loss(input_data_1, input_data_2)
         output_data.backward()

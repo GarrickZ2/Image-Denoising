@@ -35,12 +35,8 @@ class AlignmentLoss(nn.Module):
         ifd = self.ridnet(fake_image, 0)
         self.l1_loss = self.loss_l1(ird, ifd)
 
-        cd_rn = self.discriminator.get_untransformed_output()
-        self.discriminator(fake_image)
-        cd_fn = self.discriminator.get_untransformed_output()
-
-        dra_rn = self.sigmoid(cd_rn - torch.mean(cd_fn, dim=0))
-        dra_fn = self.sigmoid(cd_fn - torch.mean(cd_rn, dim=0))
+        dra_rn, cd_rn = self.discriminator(real_image)
+        dra_fn, cd_fn = self.discriminator(fake_image)
 
         self.ld_loss = -torch.mean(torch.mean(torch.log(dra_rn), dim=0) + torch.mean(torch.log(1 - dra_fn)))
         self.lg_loss = -torch.mean(torch.mean(torch.log(1 - dra_rn), dim=0) + torch.mean(torch.log(dra_fn)))
