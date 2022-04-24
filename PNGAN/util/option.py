@@ -140,7 +140,7 @@ parser.add_argument('--testpath', type=str, default='../../data',
 parser.add_argument('--testset', type=str, default='Set5',
                     help='dataset name for testing')
 
-args = parser.parse_args()
+args = parser.parse_args(args=[])
 template.set_template(args)
 
 args.noise_g = list(map(lambda x: int(x), args.noise_g.split('+')))
