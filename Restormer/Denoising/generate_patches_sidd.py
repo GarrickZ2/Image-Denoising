@@ -7,7 +7,6 @@ import os
 from tqdm import tqdm
 from pdb import set_trace as stx
 
-
 src = 'Datasets/Downloads/SIDD'
 tar = 'Datasets/train/SIDD'
 
@@ -33,6 +32,7 @@ patch_size = 512
 overlap = 128
 p_max = 0
 
+
 def save_files(file_):
     lr_file, hr_file = file_
     filename = os.path.splitext(os.path.split(lr_file)[-1])[0]
@@ -41,31 +41,33 @@ def save_files(file_):
     num_patch = 0
     w, h = lr_img.shape[:2]
     if w > p_max and h > p_max:
-        w1 = list(np.arange(0, w-patch_size, patch_size-overlap, dtype=np.int))
-        h1 = list(np.arange(0, h-patch_size, patch_size-overlap, dtype=np.int))
-        w1.append(w-patch_size)
-        h1.append(h-patch_size)
+        w1 = list(np.arange(0, w - patch_size, patch_size - overlap, dtype=np.int))
+        h1 = list(np.arange(0, h - patch_size, patch_size - overlap, dtype=np.int))
+        w1.append(w - patch_size)
+        h1.append(h - patch_size)
         for i in w1:
             for j in h1:
                 num_patch += 1
-                
-                lr_patch = lr_img[i:i+patch_size, j:j+patch_size,:]
-                hr_patch = hr_img[i:i+patch_size, j:j+patch_size,:]
-                
+
+                lr_patch = lr_img[i:i + patch_size, j:j + patch_size, :]
+                hr_patch = hr_img[i:i + patch_size, j:j + patch_size, :]
+
                 lr_savename = os.path.join(lr_tar, filename + '-' + str(num_patch) + '.png')
                 hr_savename = os.path.join(hr_tar, filename + '-' + str(num_patch) + '.png')
-                
+
                 cv2.imwrite(lr_savename, lr_patch)
                 cv2.imwrite(hr_savename, hr_patch)
 
     else:
         lr_savename = os.path.join(lr_tar, filename + '.png')
         hr_savename = os.path.join(hr_tar, filename + '.png')
-        
+
         cv2.imwrite(lr_savename, lr_img)
         cv2.imwrite(hr_savename, hr_img)
 
+
 from joblib import Parallel, delayed
 import multiprocessing
+
 num_cores = 10
 Parallel(n_jobs=num_cores)(delayed(save_files)(file_) for file_ in tqdm(files))

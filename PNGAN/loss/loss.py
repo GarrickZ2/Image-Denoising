@@ -17,9 +17,11 @@ class AlignmentLoss(nn.Module):
         checkpoint = utility.checkpoint(args)
         ridnet_model = ridnet.Model(args, checkpoint)
         self.ridnet = DataParallel(ridnet_model)
+        self.ridnet.eval()
 
         self.discriminator = discriminator
         self.vgg = torchvision.models.vgg16(pretrained=True)
+        self.vgg.eval()
 
         self.loss_l1 = nn.L1Loss(reduction='sum')
         self.loss_l2 = nn.MSELoss(reduction='sum')
@@ -35,8 +37,10 @@ class AlignmentLoss(nn.Module):
         ifd = self.ridnet(fake_image, 0)
         self.l1_loss = self.loss_l1(ird, ifd)
 
+        self.discriminator.eval()
         dra_rn, cd_rn = self.discriminator(real_image)
         dra_fn, cd_fn = self.discriminator(fake_image)
+        self.discriminator.train(mode=True)
 
         self.ld_loss = -torch.mean(torch.mean(torch.log(dra_rn), dim=0) + torch.mean(torch.log(1 - dra_fn)))
         self.lg_loss = -torch.mean(torch.mean(torch.log(1 - dra_rn), dim=0) + torch.mean(torch.log(dra_fn)))
