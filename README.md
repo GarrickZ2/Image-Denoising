@@ -6,7 +6,7 @@
  - [x] Implement the loss function
  - [x] Finish the RIDNet Model
  - [ ] Finish the training process
- - [ ] Train the RIDNet Model
+ - [x] Train the RIDNet Model
  - [ ] Collect random dataset or use external dataset (find and download)
  - [ ] Download and pre-process the training and testing data
  - [ ] Write the synthesis image generator

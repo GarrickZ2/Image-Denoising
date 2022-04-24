@@ -232,7 +232,7 @@ def calculate_ssim(img1,
     Ref:
     Image quality assessment: From error visibility to structural similarity
 
-    The results are the same as that of the official released MATLAB code in
+    The results are the same as that of the official released MATLAB ridnet in
     https://ece.uwaterloo.ca/~z70wang/research/ssim/.
 
     For three-channel images, SSIM is calculated for each channel and then

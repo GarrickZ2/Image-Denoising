@@ -354,7 +354,7 @@ def generate_gaussian_kernel(kernel_size=13, sigma=1.6):
 
 
 def duf_downsample(x, kernel_size=13, scale=4):
-    """Downsamping with Gaussian kernel used in the DUF official code.
+    """Downsamping with Gaussian kernel used in the DUF official ridnet.
 
     Args:
         x (Tensor): Frames to be downsampled, with shape (b, t, c, h, w).

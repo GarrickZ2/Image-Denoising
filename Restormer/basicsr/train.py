@@ -20,6 +20,7 @@ from basicsr.utils.options import dict2str, parse
 
 import numpy as np
 
+
 def parse_options(is_train=True):
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -67,8 +68,8 @@ def init_loggers(opt):
 
     # initialize wandb logger before tensorboard logger to allow proper sync:
     if (opt['logger'].get('wandb')
-            is not None) and (opt['logger']['wandb'].get('project')
-                              is not None) and ('debug' not in opt['name']):
+        is not None) and (opt['logger']['wandb'].get('project')
+                          is not None) and ('debug' not in opt['name']):
         assert opt['logger'].get('use_tb_logger') is True, (
             'should turn on tensorboard when using wandb')
         init_wandb_logger(opt)
@@ -161,7 +162,7 @@ def main():
     if resume_state is None:
         make_exp_dirs(opt)
         if opt['logger'].get('use_tb_logger') and 'debug' not in opt[
-                'name'] and opt['rank'] == 0:
+            'name'] and opt['rank'] == 0:
             mkdir_and_rename(osp.join('tb_logger', opt['name']))
 
     # initialize loggers
@@ -237,9 +238,8 @@ def main():
             model.update_learning_rate(
                 current_iter, warmup_iter=opt['train'].get('warmup_iter', -1))
 
-            
             ### ------Progressive learning ---------------------
-            j = ((current_iter>groups) !=True).nonzero()[0]
+            j = ((current_iter > groups) != True).nonzero()[0]
             if len(j) == 0:
                 bs_j = len(groups) - 1
             else:
@@ -247,9 +247,10 @@ def main():
 
             mini_gt_size = mini_gt_sizes[bs_j]
             mini_batch_size = mini_batch_sizes[bs_j]
-            
+
             if logger_j[bs_j]:
-                logger.info('\n Updating Patch_Size to {} and Batch_Size to {} \n'.format(mini_gt_size, mini_batch_size*torch.cuda.device_count())) 
+                logger.info('\n Updating Patch_Size to {} and Batch_Size to {} \n'.format(mini_gt_size,
+                                                                                          mini_batch_size * torch.cuda.device_count()))
                 logger_j[bs_j] = False
 
             lq = train_data['lq']
@@ -265,12 +266,11 @@ def main():
                 y0 = int((gt_size - mini_gt_size) * random.random())
                 x1 = x0 + mini_gt_size
                 y1 = y0 + mini_gt_size
-                lq = lq[:,:,x0:x1,y0:y1]
-                gt = gt[:,:,x0*scale:x1*scale,y0*scale:y1*scale]
+                lq = lq[:, :, x0:x1, y0:y1]
+                gt = gt[:, :, x0 * scale:x1 * scale, y0 * scale:y1 * scale]
             ###-------------------------------------------
 
-            
-            model.feed_train_data({'lq': lq, 'gt':gt})
+            model.feed_train_data({'lq': lq, 'gt': gt})
             model.optimize_parameters(current_iter)
 
             iter_time = time.time() - iter_time
@@ -294,7 +294,7 @@ def main():
                 # wheather use uint8 image to compute metrics
                 use_image = opt['val'].get('use_image', True)
                 model.validation(val_loader, current_iter, tb_logger,
-                                 opt['val']['save_img'], rgb2bgr, use_image )
+                                 opt['val']['save_img'], rgb2bgr, use_image)
 
             data_time = time.time()
             iter_time = time.time()

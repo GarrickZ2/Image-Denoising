@@ -13,7 +13,7 @@ from tqdm import tqdm
 import concurrent.futures
 
 def image_align(deblurred, gt):
-  # this function is based on kohler evaluation code
+  # this function is based on kohler evaluation ridnet
   z = deblurred
   c = np.ones_like(z)
   x = gt

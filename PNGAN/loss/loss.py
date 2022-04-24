@@ -1,7 +1,10 @@
 import torch
 import torchvision
 from torch import nn
-from PNGAN.model.ridnet import RIDNet
+from PNGAN.util import utility
+from PNGAN.util.option import args
+from PNGAN.model import ridnet
+from torch.nn import DataParallel
 
 
 class AlignmentLoss(nn.Module):
@@ -11,7 +14,10 @@ class AlignmentLoss(nn.Module):
         self.lambda_p = lambda_p
         self.lambda_ra = lambda_ra
 
-        self.ridnet = RIDNet(3, 3, 64)
+        checkpoint = utility.checkpoint(args)
+        ridnet_model = ridnet.Model(args, checkpoint)
+        self.ridnet = DataParallel(ridnet_model)
+
         self.discriminator = discriminator
         self.vgg = torchvision.models.vgg16(pretrained=True)
 
@@ -25,8 +31,8 @@ class AlignmentLoss(nn.Module):
         self.lp_loss = None
 
     def forward(self, real_image, fake_image):
-        ird = self.ridnet(real_image)
-        ifd = self.ridnet(fake_image)
+        ird = self.ridnet(real_image, 0)
+        ifd = self.ridnet(fake_image, 0)
         self.l1_loss = self.loss_l1(ird, ifd)
 
         cd_rn = self.discriminator.get_untransformed_output()

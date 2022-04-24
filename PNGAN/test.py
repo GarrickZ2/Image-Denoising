@@ -1,15 +1,10 @@
-from PIL import Image
 import matplotlib
-from matplotlib import pyplot as plt
+
 matplotlib.use('TkAgg')
-import torch
-import numpy as np
 import unittest
-import utility
-from option import args
-from model import RIDModel
 from model.generator import *
 from model.discriminator import Discriminator
+from loss.loss import AlignmentLoss
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -73,21 +68,13 @@ class TestFlow(unittest.TestCase):
 
 
 class TestRIDNet(unittest.TestCase):
-    def test_ridmodel(self):
-        img = Image.open('a.png')
-        img = img.convert('RGB')
-        img = np.array(img.getdata()).reshape((img.size[0], img.size[1], 3))
-        plt.imshow(img)
-        plt.show()
-        # input_data = torch.rand(1, 3, 128, 128, device=device)
-        input_data = torch.from_numpy(img)
-        # checkpoint = utility.checkpoint(args)
-        # model = RIDModel(args, checkpoint)
-        # output_data = model(input_data, 10)
-        # print('Input Data Size: ', input_data.shape)
-        # print('Output Data Size: ', output_data.shape)
-        # print(output_data)
-        # plt.imshow(output_data)
-        # plt.show()
-
-
+    def test_loss(self):
+        input_data_1 = torch.rand(1, 3, 128, 128, device=device)
+        input_data_2 = torch.rand(1, 3, 128, 128, device=device)
+        model_d = Discriminator()
+        output_1 = model_d(input_data_1)
+        loss = AlignmentLoss(model_d)
+        output_data = loss(input_data_1, input_data_2)
+        output_data.backward()
+        print(output_data.shape)
+        print(output_data)
