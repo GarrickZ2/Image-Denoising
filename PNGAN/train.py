@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-
+import numpy as np
 import torch
 import tqdm
 from torch.utils.data import DataLoader
@@ -13,7 +13,8 @@ class Trainer:
             'train_loss_G': [],
             'train_loss_D': [],
             'val_loss': [],
-            'epoch': 0
+            'epoch': 0,
+            'best_val_loss': np.inf
         }
         self.criterion = criterion
         self.trainset = train_set
@@ -147,7 +148,7 @@ class Trainer:
         self.__load_state(checkpoint)
         print('Load Model from epoch: ', epoch_num)
 
-    def train(self, num_epochs=10):
+    def train(self, dir_path, num_epochs=10):
         self.netG.train(mode=True)
         self.netD.train(mode=True)
         for epoch in range(num_epochs):
@@ -188,6 +189,11 @@ class Trainer:
 
             self.schedD.step()
             self.schedG.step()
+            if self.history['epoch'] % 50 == 0:
+                self.save(dir_path)
+            if val_loss < self.history['best_val_loss']:
+                self.save(dir_path, best=True)
+                self.history['best_val_loss'] = val_loss
 
     def generator_predict(self, batch_data):
         self.netG.eval()
