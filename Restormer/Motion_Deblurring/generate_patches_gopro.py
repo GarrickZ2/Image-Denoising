@@ -66,7 +66,7 @@ def val_files(file_):
     cv2.imwrite(lr_savename, lr_patch)
     cv2.imwrite(hr_savename, hr_patch)
 
-############ Prepare Training data ####################
+############ Prepare Training dataset ####################
 num_cores = 10
 patch_size = 512
 overlap = 256
@@ -89,7 +89,7 @@ files = [(i, j) for i, j in zip(lr_files, hr_files)]
 Parallel(n_jobs=num_cores)(delayed(train_files)(file_) for file_ in tqdm(files))
 
 
-############ Prepare validation data ####################
+############ Prepare validation dataset ####################
 val_patch_size = 256
 src = 'Datasets/test/GoPro'
 tar = 'Datasets/val/GoPro'

@@ -63,7 +63,7 @@ class MessageLogger():
             eta_sec = time_sec_avg * (self.max_iters - current_iter - 1)
             eta_str = str(datetime.timedelta(seconds=int(eta_sec)))
             message += f'[eta: {eta_str}, '
-            message += f'time (data): {iter_time:.3f} ({data_time:.3f})] '
+            message += f'time (dataset): {iter_time:.3f} ({data_time:.3f})] '
 
         # other items, especially losses
         for k, v in log_vars.items():

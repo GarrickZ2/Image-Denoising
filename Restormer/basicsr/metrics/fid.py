@@ -27,7 +27,7 @@ def extract_inception_features(data_generator,
     """Extract inception features.
 
     Args:
-        data_generator (generator): A data generator.
+        data_generator (generator): A dataset generator.
         inception (nn.Module): Inception model.
         len_generator (int): Length of the data_generator to show the
             progressbar. Default: None.
@@ -67,9 +67,9 @@ def calculate_fid(mu1, sigma1, mu2, sigma2, eps=1e-6):
         sigma1 (np.array): The covariance matrix over activations for
             generated samples.
         mu2 (np.array): The sample mean over activations, precalculated on an
-               representative data set.
+               representative dataset set.
         sigma2 (np.array): The covariance matrix over activations,
-            precalculated on an representative data set.
+            precalculated on an representative dataset set.
 
     Returns:
         float: The Frechet Distance.

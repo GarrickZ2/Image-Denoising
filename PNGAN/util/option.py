@@ -9,7 +9,7 @@ parser.add_argument('--template', default='.',
                     help='You can set various templates in option.py')
 
 # Hardware specifications
-parser.add_argument('--n_threads', type=int, default=8, help='number of threads for data loading')
+parser.add_argument('--n_threads', type=int, default=8, help='number of threads for dataset loading')
 parser.add_argument('--cpu', action='store_true', default=True, help='use cpu only')
 parser.add_argument('--n_GPUs', type=int, default=1,
                     help='number of GPUs')
@@ -17,7 +17,7 @@ parser.add_argument('--seed', type=int, default=1,
                     help='random seed')
 
 # Data specifications
-parser.add_argument('--dir_data', type=str, default='../../data',
+parser.add_argument('--dir_data', type=str, default='../../dataset',
                     help='dataset directory')
 parser.add_argument('--dir_demo', type=str, default='../test',
                     help='demo image directory')
@@ -135,7 +135,7 @@ parser.add_argument('--print_every', type=int, default=100,
 parser.add_argument('--save_results', action='store_true', help='save output results')
 
 # options for test
-parser.add_argument('--testpath', type=str, default='../../data',
+parser.add_argument('--testpath', type=str, default='../../dataset',
                     help='dataset directory for testing')
 parser.add_argument('--testset', type=str, default='Set5',
                     help='dataset name for testing')

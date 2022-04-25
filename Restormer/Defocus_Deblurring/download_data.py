@@ -2,7 +2,7 @@
 ## Syed Waqas Zamir, Aditya Arora, Salman Khan, Munawar Hayat, Fahad Shahbaz Khan, and Ming-Hsuan Yang
 ## https://arxiv.org/abs/2111.09881
 
-## Download training and testing data for Defocus Deblurring task
+## Download training and testing dataset for Defocus Deblurring task
 import os
 # import gdown
 import shutil
@@ -10,7 +10,7 @@ import shutil
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data', type=str, required=True, help='train, test or train-test')
+parser.add_argument('--dataset', type=str, required=True, help='train, test or train-test')
 args = parser.parse_args()
 
 ### Google drive IDs ######
@@ -24,7 +24,7 @@ for data in args.data.split('-'):
         os.makedirs(os.path.join('Datasets', 'Downloads', 'DPDD'), exist_ok=True)
         # gdown.download(id=dpdd_train, output='Datasets/Downloads/DPDD/train.zip', quiet=False)
         os.system(f'gdrive download {dpdd_train} --path Datasets/Downloads/DPDD/')
-        print('Extracting DPDD data...')
+        print('Extracting DPDD dataset...')
         shutil.unpack_archive('Datasets/Downloads/DPDD/train.zip', 'Datasets/Downloads/DPDD')
         os.remove('Datasets/Downloads/DPDD/train.zip')
 

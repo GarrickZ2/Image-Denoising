@@ -60,7 +60,7 @@ class VideoTestDataset(data.Dataset):
             'type'] != 'lmdb', 'No need to use lmdb during validation/test.'
 
         logger = get_root_logger()
-        logger.info(f'Generate data info for VideoTestDataset - {opt["name"]}')
+        logger.info(f'Generate dataset info for VideoTestDataset - {opt["name"]}')
         self.imgs_lq, self.imgs_gt = {}, {}
         if 'meta_info_file' in opt:
             with open(opt['meta_info_file'], 'r') as fin:
@@ -101,7 +101,7 @@ class VideoTestDataset(data.Dataset):
                     border_l[max_idx - i - 1] = 1
                 self.data_info['border'].extend(border_l)
 
-                # cache data or save the frame list
+                # cache dataset or save the frame list
                 if self.cache_data:
                     logger.info(
                         f'Cache {subfolder_name} for VideoTestDataset...')
@@ -193,7 +193,7 @@ class VideoTestVimeo90KDataset(data.Dataset):
             'type'] != 'lmdb', 'No need to use lmdb during validation/test.'
 
         logger = get_root_logger()
-        logger.info(f'Generate data info for VideoTestDataset - {opt["name"]}')
+        logger.info(f'Generate dataset info for VideoTestDataset - {opt["name"]}')
         with open(opt['meta_info_file'], 'r') as fin:
             subfolders = [line.split(' ')[0] for line in fin]
         for idx, subfolder in enumerate(subfolders):

@@ -2,7 +2,7 @@
 ## Syed Waqas Zamir, Aditya Arora, Salman Khan, Munawar Hayat, Fahad Shahbaz Khan, and Ming-Hsuan Yang
 ## https://arxiv.org/abs/2111.09881
 
-## Download training and testing data for image deraining task
+## Download training and testing dataset for image deraining task
 import os
 # import gdown
 import shutil
@@ -10,7 +10,7 @@ import shutil
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data', type=str, required=True, help='train, test or train-test')
+parser.add_argument('--dataset', type=str, required=True, help='train, test or train-test')
 args = parser.parse_args()
 
 ### Google drive IDs ######
@@ -22,7 +22,7 @@ for data in args.data.split('-'):
         print('Rain13K Training Data!')
         # gdown.download(id=rain13k_train, output='Datasets/train.zip', quiet=False)
         os.system(f'gdrive download {rain13k_train} --path Datasets/')
-        print('Extracting Rain13K data...')
+        print('Extracting Rain13K dataset...')
         shutil.unpack_archive('Datasets/train.zip', 'Datasets')
         os.remove('Datasets/train.zip')
 
@@ -30,7 +30,7 @@ for data in args.data.split('-'):
         print('Download Deraining Testing Data')
         # gdown.download(id=rain13k_test, output='Datasets/test.zip', quiet=False)
         os.system(f'gdrive download {rain13k_test} --path Datasets/')
-        print('Extracting test data...')
+        print('Extracting test dataset...')
         shutil.unpack_archive('Datasets/test.zip', 'Datasets')
         os.remove('Datasets/test.zip')
 

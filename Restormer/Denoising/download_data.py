@@ -2,7 +2,7 @@
 ## Syed Waqas Zamir, Aditya Arora, Salman Khan, Munawar Hayat, Fahad Shahbaz Khan, and Ming-Hsuan Yang
 ## https://arxiv.org/abs/2111.09881
 
-## Download training and testing data for Image Denoising task
+## Download training and testing dataset for Image Denoising task
 
 
 import os
@@ -12,7 +12,7 @@ import shutil
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data', type=str, required=True, help='train, test or train-test')
+parser.add_argument('--dataset', type=str, required=True, help='train, test or train-test')
 parser.add_argument('--dataset', type=str, default='SIDD', help='all or SIDD or DND')
 parser.add_argument('--noise', type=str, required=True, help='real or gaussian')
 args = parser.parse_args()
@@ -64,7 +64,7 @@ for data in args.data.split('-'):
                 print('DND Testing Data!')
                 # gdown.download(id=DND_test, output='Datasets/test.zip', quiet=False)
                 os.system(f'gdrive download {DND_test} --path Datasets/')
-                print('Extracting DND data...')
+                print('Extracting DND dataset...')
                 shutil.unpack_archive('Datasets/test.zip', 'Datasets')
                 os.remove('Datasets/test.zip')
 
@@ -89,14 +89,14 @@ for data in args.data.split('-'):
             print('BSD400 Training Data!')
             # gdown.download(id=BSD400, output='Datasets/Downloads/BSD400.zip', quiet=False)
             os.system(f'gdrive download {BSD400} --path Datasets/Downloads/')
-            print('Extracting BSD400 data...')
+            print('Extracting BSD400 dataset...')
             shutil.unpack_archive('Datasets/Downloads/BSD400.zip', 'Datasets/Downloads')
             os.remove('Datasets/Downloads/BSD400.zip')
             
             print('Flickr2K Training Data!')
             # gdown.download(id=Flickr2K, output='Datasets/Downloads/Flickr2K.zip', quiet=False)
             os.system(f'gdrive download {Flickr2K} --path Datasets/Downloads/')
-            print('Extracting Flickr2K data...')
+            print('Extracting Flickr2K dataset...')
             shutil.unpack_archive('Datasets/Downloads/Flickr2K.zip', 'Datasets/Downloads')
             os.remove('Datasets/Downloads/Flickr2K.zip')
 

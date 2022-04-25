@@ -38,12 +38,12 @@ class BaseModel():
         """Validation function.
 
         Args:
-            dataloader (torch.utils.data.DataLoader): Validation dataloader.
+            dataloader (torch.utils.dataset.DataLoader): Validation dataloader.
             current_iter (int): Current iteration.
             tb_logger (tensorboard logger): Tensorboard logger.
             save_img (bool): Whether to save images. Default: False.
             rgb2bgr (bool): Whether to save images using rgb2bgr. Default: True
-            use_image (bool): Whether to use saved images to compute metrics (PSNR, SSIM), if not, then use data directly from network' output. Default: True
+            use_image (bool): Whether to use saved images to compute metrics (PSNR, SSIM), if not, then use dataset directly from network' output. Default: True
         """
         if self.opt['dist']:
             return self.dist_validation(dataloader, current_iter, tb_logger, save_img, rgb2bgr, use_image)

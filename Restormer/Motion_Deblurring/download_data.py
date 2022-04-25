@@ -2,7 +2,7 @@
 ## Syed Waqas Zamir, Aditya Arora, Salman Khan, Munawar Hayat, Fahad Shahbaz Khan, and Ming-Hsuan Yang
 ## https://arxiv.org/abs/2111.09881
 
-## Download training and testing data for single-image motion deblurring task
+## Download training and testing dataset for single-image motion deblurring task
 import os
 # import gdown
 import shutil
@@ -10,7 +10,7 @@ import shutil
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data', type=str, required=True, help='train, test or train-test')
+parser.add_argument('--dataset', type=str, required=True, help='train, test or train-test')
 parser.add_argument('--dataset', type=str, default='GoPro', help='all, GoPro, HIDE, RealBlur_R, RealBlur_J')
 args = parser.parse_args()
 
@@ -29,7 +29,7 @@ for data in args.data.split('-'):
         os.makedirs(os.path.join('Datasets', 'Downloads'), exist_ok=True)
         # gdown.download(id=GoPro_train, output='Datasets/Downloads/train.zip', quiet=False)
         os.system(f'gdrive download {GoPro_train} --path Datasets/Downloads/')
-        print('Extracting GoPro data...')
+        print('Extracting GoPro dataset...')
         shutil.unpack_archive('Datasets/Downloads/train.zip', 'Datasets/Downloads')
         os.rename(os.path.join('Datasets', 'Downloads', 'train'), os.path.join('Datasets', 'Downloads', 'GoPro'))
         os.remove('Datasets/Downloads/train.zip')

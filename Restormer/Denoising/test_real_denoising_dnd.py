@@ -65,7 +65,7 @@ infos = h5py.File(os.path.join(args.input_dir, 'info.mat'), 'r')
 info = infos['info']
 bb = info['boundingboxes']
 
-# Process data
+# Process dataset
 with torch.no_grad():
     for i in tqdm(range(50)):
         Idenoised = np.zeros((20,), dtype=np.object)
@@ -90,7 +90,7 @@ with torch.no_grad():
                 denoised_img = img_as_ubyte(restored_patch)
                 utils.save_img(save_file, denoised_img)
 
-        # save denoised data
+        # save denoised dataset
         sio.savemat(os.path.join(result_dir_mat, filename),
                     {"Idenoised": Idenoised,
                      "israw": israw,

@@ -11,7 +11,7 @@ class Vimeo90KDataset(data.Dataset):
     """Vimeo90K dataset for training.
 
     The keys are generated from a meta info txt file.
-    basicsr/data/meta_info/meta_info_Vimeo90K_train_GT.txt
+    basicsr/dataset/meta_info/meta_info_Vimeo90K_train_GT.txt
 
     Each line contains:
     1. clip name; 2. frame number; 3. image shape, seperated by a white space.

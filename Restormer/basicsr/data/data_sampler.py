@@ -4,9 +4,9 @@ from torch.utils.data.sampler import Sampler
 
 
 class EnlargedSampler(Sampler):
-    """Sampler that restricts data loading to a subset of the dataset.
+    """Sampler that restricts dataset loading to a subset of the dataset.
 
-    Modified from torch.utils.data.distributed.DistributedSampler
+    Modified from torch.utils.dataset.distributed.DistributedSampler
     Support enlarging the dataset for iteration-based training, for saving
     time when restart the dataloader after each epoch
 

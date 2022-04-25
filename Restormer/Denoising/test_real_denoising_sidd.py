@@ -57,7 +57,7 @@ model_restoration.cuda()
 model_restoration = nn.DataParallel(model_restoration)
 model_restoration.eval()
 
-# Process data
+# Process dataset
 filepath = os.path.join(args.input_dir, 'ValidationNoisyBlocksSrgb.mat')
 img = sio.loadmat(filepath)
 Inoisy = np.float32(np.array(img['ValidationNoisyBlocksSrgb']))
@@ -75,5 +75,5 @@ with torch.no_grad():
                 save_file = os.path.join(result_dir_png, '%04d_%02d.png'%(i+1,k+1))
                 utils.save_img(save_file, img_as_ubyte(restored_patch))
 
-# save denoised data
+# save denoised dataset
 sio.savemat(os.path.join(result_dir_mat, 'Idenoised.mat'), {"Idenoised": restored,})

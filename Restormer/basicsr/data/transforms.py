@@ -222,7 +222,7 @@ def img_rotate(img, angle, center=None, scale=1.0):
 
 def data_augmentation(image, mode):
     """
-    Performs data augmentation of the input image
+    Performs dataset augmentation of the input image
     Input:
         image: a cv2 (OpenCV) image
         mode: int. Choice of transformation to apply to the image

@@ -12,7 +12,7 @@ import h5py
 
 def bundle_submissions_raw(submission_folder,session):
     '''
-    Bundles submission data for raw denoising
+    Bundles submission dataset for raw denoising
 
     submission_folder Folder where denoised images reside
 
@@ -45,7 +45,7 @@ def bundle_submissions_raw(submission_folder,session):
 
 def bundle_submissions_srgb(submission_folder,session):
     '''
-    Bundles submission data for sRGB denoising
+    Bundles submission dataset for sRGB denoising
     
     submission_folder Folder where denoised images reside
 
@@ -78,7 +78,7 @@ def bundle_submissions_srgb(submission_folder,session):
 
 def bundle_submissions_srgb_v1(submission_folder,session):
     '''
-    Bundles submission data for sRGB denoising
+    Bundles submission dataset for sRGB denoising
     
     submission_folder Folder where denoised images reside
 

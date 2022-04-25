@@ -19,11 +19,11 @@ def make_lmdb_from_imgs(data_path,
 
     Contents of lmdb. The file structure is:
     example.lmdb
-    ├── data.mdb
+    ├── dataset.mdb
     ├── lock.mdb
     ├── meta_info.txt
 
-    The data.mdb and lock.mdb are standard lmdb files and you can refer to
+    The dataset.mdb and lock.mdb are standard lmdb files and you can refer to
     https://lmdb.readthedocs.io/en/release/ for more details.
 
     The meta_info.txt is a specified txt file to record the meta information
@@ -77,7 +77,7 @@ def make_lmdb_from_imgs(data_path,
         pbar = tqdm(total=len(img_path_list), unit='image')
 
         def callback(arg):
-            """get the image data and update pbar."""
+            """get the image dataset and update pbar."""
             key, dataset[key], shapes[key] = arg
             pbar.update(1)
             pbar.set_description(f'Read {key}')
@@ -95,7 +95,7 @@ def make_lmdb_from_imgs(data_path,
 
     # create lmdb environment
     if map_size is None:
-        # obtain data size for one image
+        # obtain dataset size for one image
         img = cv2.imread(
             osp.join(data_path, img_path_list[0]), cv2.IMREAD_UNCHANGED)
         _, img_byte = cv2.imencode(
@@ -107,7 +107,7 @@ def make_lmdb_from_imgs(data_path,
 
     env = lmdb.open(lmdb_path, map_size=map_size)
 
-    # write data to lmdb
+    # write dataset to lmdb
     pbar = tqdm(total=len(img_path_list), unit='chunk')
     txn = env.begin(write=True)
     txt_file = open(osp.join(lmdb_path, 'meta_info.txt'), 'w')
