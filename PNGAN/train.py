@@ -1,5 +1,11 @@
+import os
+from datetime import datetime
+
+import torch
 import tqdm
 from torch.utils.data import DataLoader
+from matplotlib import pyplot as plt
+import json
 
 
 class Trainer:
@@ -8,7 +14,7 @@ class Trainer:
             'train_loss_G': [],
             'train_loss_D': [],
             'val_loss': [],
-            'epochs': 0
+            'epoch': 0
         }
         self.criterion = criterion
         self.trainset = train_set
@@ -22,6 +28,7 @@ class Trainer:
         self.netG = netG
         self.schedG = schedG
         self.schedD = schedD
+        self.ts = int(datetime.timestamp(datetime.now()))
 
     def train_generator_step(self, irns, isyns):
         self.netD.eval()
@@ -53,6 +60,79 @@ class Trainer:
         _, cd_ifns = netD(ifns)
         loss = self.criterion(irns, ifns, cd_irns, cd_ifns)
         return loss.item()
+
+    def plot(self, dir_path, show=False):
+        if not os.path.exists(f'{dir_path}/result'):
+            os.mkdir(f'{dir_path}/result')
+        if not os.path.exists(f'{dir_path}/result/{self.ts}'):
+            os.mkdir(f'{dir_path}/result/{self.ts}')
+
+        plt.plot(self.history['train_loss_G'])
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Train Loss for Generator')
+        if show:
+            plt.show()
+        plt.savefig(f'{dir_path}/result/{self.ts}/loss_g.jpg')
+        plt.close()
+
+        plt.plot(self.history['train_loss_D'])
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Train Loss for Discriminator')
+        if show:
+            plt.show()
+        plt.savefig(f'{dir_path}/result/{self.ts}/loss_d.jpg')
+        plt.close()
+
+        plt.plot(self.history['val_loss'])
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Train Loss for Validation')
+        if show:
+            plt.show()
+        plt.savefig(f'{dir_path}/result/{self.ts}/loss_val.jpg')
+        plt.close()
+
+        print(f'Figure Saved in directory {dir_path}/result/{self.ts}')
+
+    def save(self, dir_path):
+        if not os.path.exists(f'{dir_path}/result'):
+            os.mkdir(f'{dir_path}/result')
+        if not os.path.exists(f'{dir_path}/result/{self.ts}'):
+            os.mkdir(f'{dir_path}/result/{self.ts}')
+        torch.save(self.netD.state_dict(), f'{dir_path}/result/{self.ts}/modelD_{self.history["epoch"]}.pt')
+        torch.save(self.netG.state_dict(), f'{dir_path}/result/{self.ts}/modelG_{self.history["epoch"]}.pt')
+        with open(f'{dir_path}/result/{self.ts}/history_{self.history["epoch"]}.json', 'w') as f:
+            json.dump(self.history, f)
+
+        torch.save(self.netD.state_dict(), f'{dir_path}/result/{self.ts}/modelD.pt')
+        torch.save(self.netG.state_dict(), f'{dir_path}/result/{self.ts}/modelG.pt')
+        with open(f'{dir_path}/result/{self.ts}/history.json', 'w') as f:
+            json.dump(self.history, f)
+
+    def load_latest(self, dir_path, ts=None):
+        model_path = dir_path
+        if ts is not None:
+            model_path = f"{dir_path}/result/{ts}"
+        self.netD.load_state_dict(torch.load(f'{model_path}/modelD.pt'))
+        self.netG.load_state_dict(torch.load(f'{model_path}/modelG.pt'))
+        with open(f'{model_path}/history.json', 'r') as f:
+            self.history = json.load(f)
+        print('Load Model from epoch: ', self.history['epoch'])
+
+    def load(self, dir_path, ts=None, epoch_num=None):
+        if epoch_num is None:
+            self.load_latest(dir_path, ts)
+            return
+        model_path = dir_path
+        if ts is not None:
+            model_path = f"{dir_path}/result/{ts}"
+        self.netD.load_state_dict(torch.load(f'{model_path}/modelD_{epoch_num}.pt'))
+        self.netG.load_state_dict(torch.load(f'{model_path}/modelG_{epoch_num}.pt'))
+        with open(f'{model_path}/history_{epoch_num}.json', 'r') as f:
+            self.history = json.load(f)
+        print('Load Model from epoch: ', epoch_num)
 
     def train(self, num_epochs=10):
         for epoch in range(num_epochs):
