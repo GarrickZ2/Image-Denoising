@@ -1,4 +1,3 @@
-import os
 import glob
 import pandas as pd
 import torch
@@ -7,9 +6,7 @@ import torch.distributions as dist
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 
-default_patch_size = (128, 128)
 default_transform = transforms.Compose([
-    transforms.RandomResizedCrop(default_patch_size),
     transforms.RandomHorizontalFlip(0.5),
     transforms.RandomVerticalFlip(0.5),
     transforms.ToTensor(),
@@ -53,25 +50,26 @@ class SIDDSmallDataset(Dataset):
     def __init__(self,
                  root_dir,
                  transform=default_transform,
-                 data_type='train',
-                 fake_noise_model=fake_noise_model):
+                 fake_preserve=True,
+                 noise_generator=fake_noise_model,
+                 data_type='train'):
         self.root_dir = root_dir
         self.input_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/input_crops/**"))
-        self.target_dirs= pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/target_crops/**"))
+        self.target_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/target_crops/**"))
         self.transform = transform
-        self.fake_noise_model = fake_noise_model
+        self.preserve = fake_preserve
+        self.noise_generator = noise_generator
+        self.fake_image_set = {}
 
     def __len__(self):
-        return len(self.dirs)
+        return len(self.input_dirs)
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        noise_name = self.input_dirs[idx]
-        clean_name = self.target_dirs[idx]
-        clean = Image.open(clean_name)
-        true_noisy = Image.open(noise_name)
+        clean = Image.open(self.target_dirs[idx])
+        true_noisy = Image.open(self.input_dirs[idx])
 
         if self.transform:
             state = torch.get_rng_state()
@@ -79,6 +77,13 @@ class SIDDSmallDataset(Dataset):
             torch.set_rng_state(state)
             true_noisy = self.transform(true_noisy)
 
-        fake_noisy = self.fake_noise_model(clean)
+        if self.preserve:
+            if idx in self.fake_image_set.keys():
+                fake_noisy = self.fake_image_set[idx]
+            else:
+                fake_noisy = self.noise_generator(clean)
+                self.fake_image_set[idx] = fake_noisy
+        else:
+            fake_noisy = self.noise_generator(clean)
 
         return clean, true_noisy, fake_noisy

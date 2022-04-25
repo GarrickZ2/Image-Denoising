@@ -28,8 +28,8 @@ for file_ in files:
 
 files = [(i, j) for i, j in zip(lr_files, hr_files)]
 
-patch_size = 512
-overlap = 128
+patch_size = 128
+overlap = 32
 p_max = 0
 
 

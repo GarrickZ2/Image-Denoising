@@ -8,7 +8,7 @@ from torch.nn import DataParallel
 
 
 class AlignmentLoss(nn.Module):
-    def __init__(self, discriminator, lambda_p=6e-3, lambda_ra=8e-4):
+    def __init__(self, lambda_p=6e-3, lambda_ra=8e-4):
         super(AlignmentLoss, self).__init__()
 
         self.lambda_p = lambda_p
@@ -19,7 +19,6 @@ class AlignmentLoss(nn.Module):
         self.ridnet = DataParallel(ridnet_model)
         self.ridnet.eval()
 
-        self.discriminator = discriminator
         self.vgg = torchvision.models.vgg16(pretrained=True)
         self.vgg.eval()
 
@@ -32,15 +31,11 @@ class AlignmentLoss(nn.Module):
         self.lg_loss = None
         self.lp_loss = None
 
-    def forward(self, real_image, fake_image):
+    def forward(self, real_image, fake_image, cd_rn, cd_fn):
         ird = self.ridnet(real_image, 0)
         ifd = self.ridnet(fake_image, 0)
         self.l1_loss = self.loss_l1(ird, ifd)
 
-        self.discriminator.eval()
-        _, cd_rn = self.discriminator(real_image)
-        _, cd_fn = self.discriminator(fake_image)
-        self.discriminator.train(mode=True)
         dra_rn = self.sigmoid(cd_rn - torch.mean(cd_fn, dim=0))
         dra_fn = self.sigmoid(cd_fn - torch.mean(cd_rn, dim=0))
 
