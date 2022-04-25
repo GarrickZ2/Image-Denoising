@@ -12,7 +12,7 @@ import shutil
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', type=str, required=True, help='train, test or train-test')
+parser.add_argument('--data', type=str, required=True, help='train, test or train-test')
 parser.add_argument('--dataset', type=str, default='SIDD', help='all or SIDD or DND')
 parser.add_argument('--noise', type=str, required=True, help='real or gaussian')
 args = parser.parse_args()

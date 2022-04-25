@@ -50,19 +50,14 @@ fake_noise_model = add_noise()
 
 
 class SIDDSmallDataset(Dataset):
-    """
-    https://www.eecs.yorku.ca/~kamel/sidd/index.php
-    """
-    CLEAN_IMG_NAME = "GT_SRGB_010.PNG"
-    NOISY_IMG_NAME = "NOISY_SRGB_010.PNG"
-
     def __init__(self,
                  root_dir,
                  transform=default_transform,
                  data_type='train',
                  fake_noise_model=fake_noise_model):
         self.root_dir = root_dir
-        self.dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/**"))
+        self.input_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/input_crops/**"))
+        self.target_dirs= pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/target_crops/**"))
         self.transform = transform
         self.fake_noise_model = fake_noise_model
 
@@ -73,9 +68,10 @@ class SIDDSmallDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        dir_name = self.dirs[idx]
-        clean = Image.open(os.path.join(dir_name, self.CLEAN_IMG_NAME))
-        true_noisy = Image.open(os.path.join(dir_name, self.NOISY_IMG_NAME))
+        noise_name = self.input_dirs[idx]
+        clean_name = self.target_dirs[idx]
+        clean = Image.open(clean_name)
+        true_noisy = Image.open(noise_name)
 
         if self.transform:
             state = torch.get_rng_state()
