@@ -38,7 +38,7 @@ def add_noise(noise_func=random_noise_levels_sidd):
         mean = torch.Tensor([0.0])
         distribution = dist.normal.Normal(mean, torch.sqrt(variance))
         noise = distribution.sample()
-        return image + noise
+        return torch.clamp(image + noise, 0, 1)
 
     return _func
 
