@@ -39,8 +39,8 @@ class AlignmentLoss(nn.Module):
         dra_rn = self.sigmoid(cd_rn - torch.mean(cd_fn, dim=0))
         dra_fn = self.sigmoid(cd_fn - torch.mean(cd_rn, dim=0))
 
-        self.ld_loss = -torch.mean(torch.mean(torch.log(dra_rn), dim=0) + torch.mean(torch.log(1 - dra_fn)))
-        self.lg_loss = -torch.mean(torch.mean(torch.log(1 - dra_rn), dim=0) + torch.mean(torch.log(dra_fn)))
+        self.ld_loss = -torch.mean(torch.mean(torch.log(dra_rn), dim=0) + torch.mean(torch.log(1 - dra_fn), dim=0))
+        self.lg_loss = -torch.mean(torch.mean(torch.log(1 - dra_rn), dim=0) + torch.mean(torch.log(dra_fn), dim=0))
         self.lp_loss = self.loss_l2(self.vgg(ifd), self.vgg(ird))
 
         return self.l1_loss + self.lambda_p * self.lp_loss + self.lambda_ra * (self.ld_loss + self.lg_loss)

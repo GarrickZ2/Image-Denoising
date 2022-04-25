@@ -5,7 +5,6 @@ import torch
 import tqdm
 from torch.utils.data import DataLoader
 from matplotlib import pyplot as plt
-import json
 
 
 class Trainer:
@@ -30,7 +29,7 @@ class Trainer:
         self.schedD = schedD
         self.ts = int(datetime.timestamp(datetime.now()))
 
-    def train_generator_step(self, irns, isyns):
+    def __train_generator_step(self, irns, isyns):
         self.netD.eval()
         self.netG.train(mode=True)
         self.optimG.zero_grad()
@@ -42,7 +41,7 @@ class Trainer:
         self.optimG.step()
         return lossG.item()
 
-    def train_discriminator_step(self, irns, isyns):
+    def __train_discriminator_step(self, irns, isyns):
         self.netG.eval()
         self.netD.train(mode=True)
         self.optimD.zero_grad()
@@ -54,7 +53,7 @@ class Trainer:
         self.optimD.step()
         return lossD.item()
 
-    def val_step(self, irns, isyns, netG, netD):
+    def __val_step(self, irns, isyns, netG, netD):
         ifns = netG(isyns)
         _, cd_irns = netD(irns)
         _, cd_ifns = netD(ifns)
@@ -96,29 +95,45 @@ class Trainer:
 
         print(f'Figure Saved in directory {dir_path}/result/{self.ts}')
 
-    def save(self, dir_path):
+    def save(self, dir_path, best=False):
         if not os.path.exists(f'{dir_path}/result'):
             os.mkdir(f'{dir_path}/result')
         if not os.path.exists(f'{dir_path}/result/{self.ts}'):
             os.mkdir(f'{dir_path}/result/{self.ts}')
-        torch.save(self.netD.state_dict(), f'{dir_path}/result/{self.ts}/modelD_{self.history["epoch"]}.pt')
-        torch.save(self.netG.state_dict(), f'{dir_path}/result/{self.ts}/modelG_{self.history["epoch"]}.pt')
-        with open(f'{dir_path}/result/{self.ts}/history_{self.history["epoch"]}.json', 'w') as f:
-            json.dump(self.history, f)
+        model_path = f'{dir_path}/result/{self.ts}/epoch_{self.history["epoch"]}.pt'
+        store_dictory = {
+            'modelD': self.netD.state_dict(),
+            'modelG': self.netG.state_dict(),
+            'schedG': self.schedG.state_dict(),
+            'schedD': self.schedD.state_dict(),
+            'optimG': self.optimG.state_dict(),
+            'optimD': self.optimD.state_dict(),
+            'history': self.history
+        }
+        torch.save(store_dictory, model_path)
+        torch.save(store_dictory, f'{dir_path}/result/{self.ts}/model.pt')
+        if best:
+            torch.save(store_dictory, f'{dir_path}/result/{self.ts}/model_best.pt')
 
-        torch.save(self.netD.state_dict(), f'{dir_path}/result/{self.ts}/modelD.pt')
-        torch.save(self.netG.state_dict(), f'{dir_path}/result/{self.ts}/modelG.pt')
-        with open(f'{dir_path}/result/{self.ts}/history.json', 'w') as f:
-            json.dump(self.history, f)
+    def __load_state(self, store_dic):
+        self.history = store_dic['history']
+        self.netD.load_state_dict(store_dic['modelD'])
+        self.netG.load_state_dict(store_dic['modelG'])
+        self.schedD.load_state_dict(store_dic['schedD'])
+        self.schedG.load_state_dict(store_dic['schedG'])
+        self.optimG.load_state_dict(store_dic['optimG'])
+        self.optimD.load_state_dict(store_dic['optimD'])
 
-    def load_latest(self, dir_path, ts=None):
+    def load_latest(self, dir_path, ts=None, best=False):
         model_path = dir_path
         if ts is not None:
             model_path = f"{dir_path}/result/{ts}"
-        self.netD.load_state_dict(torch.load(f'{model_path}/modelD.pt'))
-        self.netG.load_state_dict(torch.load(f'{model_path}/modelG.pt'))
-        with open(f'{model_path}/history.json', 'r') as f:
-            self.history = json.load(f)
+        if best:
+            print('Loading The Best Model')
+            checkpoint = torch.load(f'{model_path}/model_best.pt')
+        else:
+            checkpoint = torch.load(f'{model_path}/model.pt')
+        self.__load_state(checkpoint)
         print('Load Model from epoch: ', self.history['epoch'])
 
     def load(self, dir_path, ts=None, epoch_num=None):
@@ -128,13 +143,13 @@ class Trainer:
         model_path = dir_path
         if ts is not None:
             model_path = f"{dir_path}/result/{ts}"
-        self.netD.load_state_dict(torch.load(f'{model_path}/modelD_{epoch_num}.pt'))
-        self.netG.load_state_dict(torch.load(f'{model_path}/modelG_{epoch_num}.pt'))
-        with open(f'{model_path}/history_{epoch_num}.json', 'r') as f:
-            self.history = json.load(f)
+        checkpoint = torch.load(f'{model_path}/epoch_{epoch_num}.pt')
+        self.__load_state(checkpoint)
         print('Load Model from epoch: ', epoch_num)
 
     def train(self, num_epochs=10):
+        self.netG.train(mode=True)
+        self.netD.train(mode=True)
         for epoch in range(num_epochs):
             train_loss_G = 0.0
             train_loss_D = 0.0
@@ -142,8 +157,8 @@ class Trainer:
             for i, (_, irns, isyns) in enumerate(process):
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
-                step_loss_G = self.train_generator_step(irns, isyns)
-                step_loss_D = self.train_discriminator_step(irns, isyns)
+                step_loss_G = self.__train_generator_step(irns, isyns)
+                step_loss_D = self.__train_discriminator_step(irns, isyns)
                 train_loss_G += step_loss_G
                 train_loss_D += step_loss_D
                 process.set_description(
@@ -162,13 +177,26 @@ class Trainer:
             for i, (_, irns, isyns) in enumerate(process):
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
-                val_loss += self.val_step(irns, isyns, self.netG, self.netD)
+                val_loss += self.__val_step(irns, isyns, self.netG, self.netD)
 
             val_loss /= len(self.valset)
             self.history['val_loss'].append(val_loss)
             self.history['epoch'] += 1
             print(
-                f"Epoch {self.history['epoch'] + 1}: val_loss={val_loss} generator_train_loss={train_loss_G}, discriminator_train_loss={train_loss_D}")
+                f"Epoch {self.history['epoch'] + 1}: val_loss={val_loss} generator_train_loss={train_loss_G}, "
+                f"discriminator_train_loss={train_loss_D}")
 
             self.schedD.step()
             self.schedG.step()
+
+    def generator_predict(self, batch_data):
+        self.netG.eval()
+        result = self.netG(batch_data)
+        self.netG.train(mode=True)
+        return result
+
+    def discriminator_predict(self, batch_data):
+        self.netD.eval()
+        result = self.netD(batch_data)
+        self.netD.train(mode=True)
+        return result
