@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 
 
 class Trainer:
-    def __init__(self, netG, netD, train_set, val_set, criterion, optimG, optimD, schedG, schedD, device):
+    def __init__(self, netG, netD, train_set, val_set, criterion, optimG, optimD, schedG, schedD, device, batch=8):
         self.history = {
             'train_loss_G': [],
             'train_loss_D': [],
@@ -22,8 +22,8 @@ class Trainer:
         self.criterion = criterion
         self.trainset = train_set
         self.valset = val_set
-        self.train_loader = DataLoader(train_set, batch_size=8, shuffle=True)
-        self.val_loader = DataLoader(val_set, batch_size=8)
+        self.train_loader = DataLoader(train_set, batch_size=batch, shuffle=True)
+        self.val_loader = DataLoader(val_set, batch_size=batch)
         self.device = device
         self.optimG = optimG
         self.optimD = optimD
@@ -221,11 +221,11 @@ class Trainer:
 
 
 class ParallelTrainer(Trainer):
-    def __init__(self, netG, netD, train_set, val_set, criterion, optimG, optimD, schedG, schedD, device, url):
-        super().__init__(netG, netD, train_set, val_set, criterion, optimG, optimD, schedG, schedD, device)
+    def __init__(self, netG, netD, train_set, val_set, criterion, optimG, optimD, schedG, schedD, device, url, batch=8):
+        super().__init__(netG, netD, train_set, val_set, criterion, optimG, optimD, schedG, schedD, device, batch)
         self.url = url
 
-    def __train_generator_step(self, irns, isyns):
+    def __train_generator_step_parallel(self, irns, isyns):
         self.netD.eval()
         self.netG.train(mode=True)
         self.optimG.zero_grad()
@@ -236,15 +236,13 @@ class ParallelTrainer(Trainer):
         data = pickle.dumps(lossG)
         data = base64.b64encode(data)
         send_data = {'loss': data}
-        print('Send Requests')
         response = requests.post(f"{self.url}/generator", data=send_data).content
-        print('Get Response')
         state_dict = pickle.loads(response)
         self.netG.load_state_dict(state_dict)
 
         return lossG.item()
 
-    def __train_discriminator_step(self, irns, isyns):
+    def __train_discriminator_step_parallel(self, irns, isyns):
         self.netG.eval()
         self.netD.train(mode=True)
         self.optimD.zero_grad()
@@ -255,19 +253,68 @@ class ParallelTrainer(Trainer):
 
         data = pickle.dumps(lossD)
         data = base64.b64encode(data)
-        print('Send Request')
         send_data = {'loss': data}
         response = requests.post(f"{self.url}/discriminator", data=send_data).content
-        print('Get Response')
         state_dict = pickle.loads(response)
         self.netD.load_state_dict(state_dict)
 
         return lossD.item()
 
-    def __val_step(self, irns, isyns, netG, netD):
+    def __val_step_parallel(self, irns, isyns, netG, netD):
         ifns = netG(isyns)
         _, cd_irns = netD(irns)
         _, cd_ifns = netD(ifns)
         loss = self.criterion(irns, ifns, cd_irns, cd_ifns)
         requests.get(f"{self.url}/validate?val={loss.item()}")
         return loss.item()
+
+    def train(self, dir_path, num_epochs=10):
+        self.netG.train(mode=True)
+        self.netD.train(mode=True)
+        for epoch in range(num_epochs):
+            train_loss_G = 0.0
+            train_loss_D = 0.0
+            process = tqdm.tqdm(self.train_loader)
+            for i, (_, irns, isyns) in enumerate(process):
+                irns = irns.to(self.device)
+                isyns = isyns.to(self.device)
+                step_loss_G = self.__train_generator_step_parallel(irns, isyns)
+                step_loss_D = self.__train_discriminator_step_parallel(irns, isyns)
+                train_loss_G += step_loss_G
+                train_loss_D += step_loss_D
+                process.set_description(
+                    f"Epoch {epoch + 1}: generator_train_loss={step_loss_G}, discriminator_train_loss={step_loss_D}")
+                self.schedD.step()
+                self.schedG.step()
+                if i % 200 == 0:
+                    torch.cuda.empty_cache()
+
+            train_loss_G /= len(self.trainset)
+            train_loss_D /= len(self.trainset)
+            self.history['train_loss_G'].append(train_loss_G)
+            self.history['train_loss_D'].append(train_loss_D)
+            process.close()
+
+            self.netD.eval()
+            self.netG.eval()
+            val_loss = 0.0
+            process = tqdm.tqdm(self.val_loader)
+            for i, (_, irns, isyns) in enumerate(process):
+                irns = irns.to(self.device)
+                isyns = isyns.to(self.device)
+                val_loss += self.__val_step_parallel(irns, isyns, self.netG, self.netD)
+                if i % 200 == 0:
+                    torch.cuda.empty_cache()
+
+            val_loss = self.finish_val(val_loss)
+            self.history['val_loss'].append(val_loss)
+            self.history['epoch'] += 1
+            print(
+                f"Epoch {self.history['epoch'] + 1}: val_loss={val_loss} generator_train_loss={train_loss_G}, "
+                f"discriminator_train_loss={train_loss_D}")
+
+            if self.history['epoch'] % 5 == 0:
+                self.save(dir_path)
+            if val_loss < self.history['best_val_loss']:
+                self.save(dir_path, best=True)
+                self.history['best_val_loss'] = val_loss
