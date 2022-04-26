@@ -1,16 +1,30 @@
-# This is a sample Python script.
+from util.option import args
+from model.generator import *
+from model.discriminator import *
+from loss.loss import AlignmentLoss
+import torch.optim as optim
+import torch.optim.lr_scheduler as lr_scheduler
+from PNGAN.dataset.dataset import *
+from PNGAN.train import Trainer
 
-# Press ⌃R to execute it or replace it with your ridnet.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+args.pre_train = './experiment/ridnet.pt'
+train_ds = SIDDSmallDataset('./Datasets')
+val_ds = SIDDSmallDataset('./Datasets', data_type='val')
+print(len(train_ds), len(val_ds))
 
-def print_hi(name):
-    # Use a breakpoint in the ridnet line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+netD = Discriminator().to(device)
+netG = Generator(3, 64).to(device)
+criterion = AlignmentLoss().to(device)
 
+optimizerD = optim.Adam(netD.parameters(), lr=2e-4, betas=(0.9, 0.9999))
+optimizerG = optim.Adam(netG.parameters(), lr=2e-4, betas=(0.9, 0.9999))
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+schedulerD = lr_scheduler.CosineAnnealingLR(optimizerD, T_max=7e5, eta_min=1e-6)
+schedulerG = lr_scheduler.CosineAnnealingLR(optimizerG, T_max=7e5, eta_min=1e-6)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+train_process = Trainer(netG, netD, train_ds, val_ds, criterion, optimizerG, optimizerD, schedulerG, schedulerD, device)
+
+train_process.train('./', num_epochs=1)
+train_process.save('./')
