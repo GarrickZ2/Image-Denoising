@@ -17,7 +17,8 @@ class Trainer:
             'train_loss_D': [],
             'val_loss': [],
             'epoch': 0,
-            'best_val_loss': np.inf
+            'best_val_loss': np.inf,
+            'step': 0,
         }
         self.criterion = criterion
         self.trainset = train_set
@@ -104,7 +105,7 @@ class Trainer:
             os.mkdir(f'{dir_path}/result')
         if not os.path.exists(f'{dir_path}/result/{self.ts}'):
             os.mkdir(f'{dir_path}/result/{self.ts}')
-        model_path = f'{dir_path}/result/{self.ts}/epoch_{self.history["epoch"]}.pt'
+        model_path = f'{dir_path}/result/{self.ts}/epoch_{self.history["epoch"]}_{self.history["step"]}.pt'
         store_dictory = {
             'modelD': self.netD.state_dict(),
             'modelG': self.netG.state_dict(),
@@ -164,6 +165,9 @@ class Trainer:
             train_loss_D = 0.0
             process = tqdm.tqdm(self.train_loader)
             for i, (_, irns, isyns) in enumerate(process):
+                if i < self.history['step']:
+                    continue
+                self.history['step'] = i
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
                 step_loss_G = self.__train_generator_step(irns, isyns)
@@ -174,6 +178,9 @@ class Trainer:
                     f"Epoch {epoch + 1}: generator_train_loss={step_loss_G}, discriminator_train_loss={step_loss_D}")
                 self.schedD.step()
                 self.schedG.step()
+                if self.history['step'] % 2000 == 0:
+                    print('Saved the model for step', self.history['step'])
+                    self.save(dir_path)
                 if i % 200 == 0:
                     torch.cuda.empty_cache()
 
@@ -200,7 +207,6 @@ class Trainer:
             print(
                 f"Epoch {self.history['epoch'] + 1}: val_loss={val_loss} generator_train_loss={train_loss_G}, "
                 f"discriminator_train_loss={train_loss_D}")
-
             if self.history['epoch'] % 5 == 0:
                 self.save(dir_path)
             if val_loss < self.history['best_val_loss']:
