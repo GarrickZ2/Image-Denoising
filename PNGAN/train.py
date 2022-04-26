@@ -236,7 +236,9 @@ class ParallelTrainer(Trainer):
         data = pickle.dumps(lossG)
         data = base64.b64encode(data)
         send_data = {'loss': data}
+        print('Send Requests')
         response = requests.post(f"{self.url}/generator", data=send_data).content
+        print('Get Response')
         state_dict = pickle.loads(response)
         self.netG.load_state_dict(state_dict)
 
@@ -253,8 +255,10 @@ class ParallelTrainer(Trainer):
 
         data = pickle.dumps(lossD)
         data = base64.b64encode(data)
+        print('Send Request')
         send_data = {'loss': data}
         response = requests.post(f"{self.url}/discriminator", data=send_data).content
+        print('Get Response')
         state_dict = pickle.loads(response)
         self.netD.load_state_dict(state_dict)
 
