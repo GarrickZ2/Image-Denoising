@@ -206,3 +206,7 @@ class Trainer:
         result = self.netD(batch_data)
         self.netD.train(mode=True)
         return result
+
+
+class ParallelTrainer(Trainer):
+    pass

@@ -55,7 +55,7 @@ parser.add_argument('--model', default='RIDNET', help='model name')
 
 parser.add_argument('--act', type=str, default='relu',
                     help='activation function')
-parser.add_argument('--pre_train', type=str, default='./experiment/ridnet.pt',
+parser.add_argument('--pre_train', type=str, default='../PNGAN/experiment/ridnet.pt',
                     help='pre-trained model directory')
 parser.add_argument('--extend', type=str, default='.',
                     help='pre-trained model directory')
