@@ -4,6 +4,7 @@ import glob
 import pandas as pd
 import os
 from tqdm import tqdm
+import argparse
 
 src_input = 'Datasets/val/SIDD/input_crops'
 src_target = 'Datasets/val/SIDD/target_crops'
@@ -11,9 +12,15 @@ src_target = 'Datasets/val/SIDD/target_crops'
 input_files = pd.Series(glob.glob(f"{src_input}/**"))
 target_files = pd.Series(glob.glob(f"{src_target}/**"))
 
-patch_size = 128
-overlap = 32
-p_max = 0
+parser = argparse.ArgumentParser()
+parser.add_argument('--size', type=int, default=128, help='train, test or train-test')
+parser.add_argument('--overlap', type=int, default=0, help='all or SIDD or DND')
+parser.add_argument('--padding', type=int, default=0, help='real or gaussian')
+args = parser.parse_args(args=[])
+
+patch_size = args.size
+overlap = args.overlap
+p_max = args.padding
 
 
 def save_files(lr_file, hr_file):

@@ -1,11 +1,10 @@
 import cv2
-import torch
 import numpy as np
 from glob import glob
 from natsort import natsorted
 import os
 from tqdm import tqdm
-from pdb import set_trace as stx
+import argparse
 
 src = 'Datasets/Downloads/SIDD'
 tar = 'Datasets/train/SIDD'
@@ -28,9 +27,15 @@ for file_ in files:
 
 files = [(i, j) for i, j in zip(lr_files, hr_files)]
 
-patch_size = 128
-overlap = 32
-p_max = 0
+parser = argparse.ArgumentParser()
+parser.add_argument('--size', type=int, default=128, help='train, test or train-test')
+parser.add_argument('--overlap', type=int, default=0, help='all or SIDD or DND')
+parser.add_argument('--padding', type=int, default=0, help='real or gaussian')
+args = parser.parse_args(args=[])
+
+patch_size = args.size
+overlap = args.overlap
+p_max = args.padding
 
 
 def save_files(file_):
