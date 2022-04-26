@@ -164,6 +164,8 @@ class Trainer:
                 train_loss_D += step_loss_D
                 process.set_description(
                     f"Epoch {epoch + 1}: generator_train_loss={step_loss_G}, discriminator_train_loss={step_loss_D}")
+                self.schedG.step() # This is odd but CosineAnnealing is supposed to step for each batch
+                self.schedD.step() # see https://discuss.pytorch.org/t/how-to-implement-torch-optim-lr-scheduler-cosineannealinglr/28797/6
 
             train_loss_G /= len(self.trainset)
             train_loss_D /= len(self.trainset)
@@ -187,8 +189,10 @@ class Trainer:
                 f"Epoch {self.history['epoch'] + 1}: val_loss={val_loss} generator_train_loss={train_loss_G}, "
                 f"discriminator_train_loss={train_loss_D}")
 
-            self.schedD.step()
-            self.schedG.step()
+            # self.schedD.step()
+            # self.schedG.step()
+            # In the original SGDR paper apparently the learning rate scheduler gets reset every epoch
+            # But PNGAN paper says we don't do that, just let the learning rate drop
             if self.history['epoch'] % 50 == 0:
                 self.save(dir_path)
             if val_loss < self.history['best_val_loss']:
