@@ -70,11 +70,12 @@ class SIDDSmallDataset(Dataset):
         if limit is not None:
             self.input_dirs = self.input_dirs[:limit]
             self.target_dirs = self.target_dirs[:limit]
+        self.length = len(self.input_dirs)
+        if self.parallel:
+            self.length = int(len(self.input_dirs) / self.machine_num)
 
     def __len__(self):
-        if self.parallel:
-            return len(self.input_dirs) / self.machine_num
-        return len(self.input_dirs)
+        return self.length
 
     def __getitem__(self, origin_id):
         if self.parallel:

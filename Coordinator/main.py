@@ -43,14 +43,14 @@ def get_update_scheduler():
 
 
 @app.route("/save", methods=['get'])
-def get_update_scheduler():
+def save_result():
     path = request.args.get("path")
     coordinator.save(path)
     return 200
 
 
 @app.route("/load", methods=['get'])
-def get_update_scheduler():
+def load_result():
     path = request.args.get("path")
     ts = request.args.get("ts")
     coordinator.load(path, ts)

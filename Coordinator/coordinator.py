@@ -1,7 +1,7 @@
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
-from model.generator import *
-from model.discriminator import *
+from PNGAN.model.generator import *
+from PNGAN.model.discriminator import *
 import torch
 from threading import Condition
 import os

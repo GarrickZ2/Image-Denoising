@@ -162,7 +162,7 @@ class Trainer:
         for epoch in range(num_epochs):
             train_loss_G = 0.0
             train_loss_D = 0.0
-            process = tqdm.tqdm(self.train_loader, leave=False)
+            process = tqdm.tqdm(self.train_loader)
             for i, (_, irns, isyns) in enumerate(process):
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
@@ -174,6 +174,8 @@ class Trainer:
                     f"Epoch {epoch + 1}: generator_train_loss={step_loss_G}, discriminator_train_loss={step_loss_D}")
                 self.schedD.step()
                 self.schedG.step()
+                if i % 200 == 0:
+                    torch.cuda.empty_cache()
 
             train_loss_G /= len(self.trainset)
             train_loss_D /= len(self.trainset)
@@ -184,20 +186,22 @@ class Trainer:
             self.netD.eval()
             self.netG.eval()
             val_loss = 0.0
-            process = tqdm.tqdm(self.val_loader, leave=False)
+            process = tqdm.tqdm(self.val_loader)
             for i, (_, irns, isyns) in enumerate(process):
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
                 val_loss += self.__val_step(irns, isyns, self.netG, self.netD)
+                if i % 200 == 0:
+                    torch.cuda.empty_cache()
 
-            val_loss = self.finish_val(val_loss / len(self.valset))
+            val_loss = self.finish_val(val_loss)
             self.history['val_loss'].append(val_loss)
             self.history['epoch'] += 1
             print(
                 f"Epoch {self.history['epoch'] + 1}: val_loss={val_loss} generator_train_loss={train_loss_G}, "
                 f"discriminator_train_loss={train_loss_D}")
 
-            if self.history['epoch'] % 50 == 0:
+            if self.history['epoch'] % 5 == 0:
                 self.save(dir_path)
             if val_loss < self.history['best_val_loss']:
                 self.save(dir_path, best=True)
