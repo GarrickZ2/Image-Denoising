@@ -4,7 +4,7 @@ import torch
 import torchvision.transforms as transforms
 import torch.distributions as dist
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 default_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(0.5),
@@ -52,7 +52,11 @@ class SIDDSmallDataset(Dataset):
                  transform=default_transform,
                  fake_preserve=True,
                  noise_generator=fake_noise_model,
-                 data_type='train'):
+                 data_type='train',
+                 parallel=False,
+                 machine_num=2,
+                 machine_id=0,
+                 limit=None):
         self.root_dir = root_dir
         self.input_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/input_crops/**"))
         self.target_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/target_crops/**"))
@@ -60,13 +64,23 @@ class SIDDSmallDataset(Dataset):
         self.preserve = fake_preserve
         self.noise_generator = noise_generator
         self.fake_image_set = {}
+        self.parallel = parallel
+        self.machine_num = machine_num
+        self.machine_id = machine_id
+        if limit is not None:
+            self.input_dirs = self.input_dirs[:limit]
+            self.target_dirs = self.target_dirs[:limit]
 
     def __len__(self):
+        if self.parallel:
+            return len(self.input_dirs) / self.machine_num
         return len(self.input_dirs)
 
-    def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
+    def __getitem__(self, origin_id):
+        if self.parallel:
+            idx = origin_id * self.machine_num + self.machine_id
+        else:
+            idx = origin_id
 
         clean = Image.open(self.target_dirs[idx])
         true_noisy = Image.open(self.input_dirs[idx])

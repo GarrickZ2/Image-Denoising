@@ -5,6 +5,7 @@ from model.discriminator import *
 import torch
 from threading import Condition
 import os
+from asyncio import Lock
 from datetime import datetime
 
 
@@ -21,15 +22,22 @@ class Coordinator:
         self.machine_num = machines
         self.update_conditionG = Condition()
         self.update_conditionD = Condition()
+        self.update_conditionV = Condition()
 
         self.g_machine = 0
         self.d_machine = 0
+        self.val_machine = 0
 
         self.ts = int(datetime.timestamp(datetime.now()))
+
+        self.val_loss = 0
+        self.val_num = 0
+        self.lock = Lock()
 
         self.history = {
             'train_lossG': [],
             'train_lossD': [],
+            'val_loss': [],
             'step_G': 0,
             'step_D': 0
         }
@@ -85,6 +93,27 @@ class Coordinator:
         state = self.netD.state_dict()
         self.update_conditionD.release()
         return state
+
+    def update_val(self, data):
+        await self.lock.acquire()
+        self.val_loss += data
+        self.val_num += 1
+        self.lock.release()
+
+    def finish_val(self):
+        self.update_conditionV.acquire()
+        self.val_machine += 1
+        if self.val_machine < self.machine_num:
+            self.update_conditionV.wait()
+        else:
+            self.update_conditionV.notifyAll()
+        self.val_machine -= 1
+        loss = self.val_loss / self.val_num
+        if self.val_machine == 0:
+            self.val_num = 0
+            self.val_loss = 0
+        self.update_conditionV.release()
+        return loss
 
     def call_scheduler(self):
         self.schedulerG.step()

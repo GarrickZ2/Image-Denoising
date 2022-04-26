@@ -4,6 +4,9 @@ import numpy as np
 import torch
 import tqdm
 from torch.utils.data import DataLoader
+import requests
+import pickle
+import base64
 from matplotlib import pyplot as plt
 
 
@@ -148,6 +151,11 @@ class Trainer:
         self.__load_state(checkpoint)
         print('Load Model from epoch: ', epoch_num)
 
+    def finish_val(self, loss):
+        if isinstance(self, ParallelTrainer):
+            return requests.get(f"{self.url}/validate/finished")
+        return loss
+
     def train(self, dir_path, num_epochs=10):
         self.netG.train(mode=True)
         self.netD.train(mode=True)
@@ -164,6 +172,8 @@ class Trainer:
                 train_loss_D += step_loss_D
                 process.set_description(
                     f"Epoch {epoch + 1}: generator_train_loss={step_loss_G}, discriminator_train_loss={step_loss_D}")
+                self.schedD.step()
+                self.schedG.step()
 
             train_loss_G /= len(self.trainset)
             train_loss_D /= len(self.trainset)
@@ -180,15 +190,13 @@ class Trainer:
                 isyns = isyns.to(self.device)
                 val_loss += self.__val_step(irns, isyns, self.netG, self.netD)
 
-            val_loss /= len(self.valset)
+            val_loss = self.finish_val(val_loss / len(self.valset))
             self.history['val_loss'].append(val_loss)
             self.history['epoch'] += 1
             print(
                 f"Epoch {self.history['epoch'] + 1}: val_loss={val_loss} generator_train_loss={train_loss_G}, "
                 f"discriminator_train_loss={train_loss_D}")
 
-            self.schedD.step()
-            self.schedG.step()
             if self.history['epoch'] % 50 == 0:
                 self.save(dir_path)
             if val_loss < self.history['best_val_loss']:
@@ -209,4 +217,49 @@ class Trainer:
 
 
 class ParallelTrainer(Trainer):
-    pass
+    def __init__(self, netG, netD, train_set, val_set, criterion, optimG, optimD, schedG, schedD, device, url):
+        super().__init__(netG, netD, train_set, val_set, criterion, optimG, optimD, schedG, schedD, device)
+        self.url = url
+
+    def __train_generator_step(self, irns, isyns):
+        self.netD.eval()
+        self.netG.train(mode=True)
+        self.optimG.zero_grad()
+        ifns = self.netG(isyns)
+        _, cd_irns = self.netD(irns)
+        _, cd_ifns = self.netD(ifns)
+        lossG = self.criterion(irns, ifns, cd_irns, cd_ifns)
+        data = pickle.dumps(lossG)
+        data = base64.b64encode(data)
+        send_data = {'loss': data}
+        response = requests.post(f"{self.url}/generator", data=send_data).content
+        state_dict = pickle.loads(response)
+        self.netG.load_state_dict(state_dict)
+
+        return lossG.item()
+
+    def __train_discriminator_step(self, irns, isyns):
+        self.netG.eval()
+        self.netD.train(mode=True)
+        self.optimD.zero_grad()
+        ifns = self.netG(isyns)
+        _, cd_irns = self.netD(irns)
+        _, cd_ifns = self.netD(ifns)
+        lossD = self.criterion(irns, ifns, cd_irns, cd_ifns)
+
+        data = pickle.dumps(lossD)
+        data = base64.b64encode(data)
+        send_data = {'loss': data}
+        response = requests.post(f"{self.url}/discriminator", data=send_data).content
+        state_dict = pickle.loads(response)
+        self.netD.load_state_dict(state_dict)
+
+        return lossD.item()
+
+    def __val_step(self, irns, isyns, netG, netD):
+        ifns = netG(isyns)
+        _, cd_irns = netD(irns)
+        _, cd_ifns = netD(ifns)
+        loss = self.criterion(irns, ifns, cd_irns, cd_ifns)
+        requests.get(f"{self.url}/validate?val={loss.item()}")
+        return loss.item()

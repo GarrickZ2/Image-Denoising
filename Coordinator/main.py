@@ -2,6 +2,7 @@ from flask import Flask, request
 import pickle
 from coordinator import Coordinator
 import base64
+import numpy as np
 
 
 app = Flask(__name__)
@@ -38,14 +39,14 @@ def get_discriminator():
 @app.route("/update", methods=['get'])
 def get_update_scheduler():
     coordinator.call_scheduler()
-    return '200'
+    return 200
 
 
 @app.route("/save", methods=['get'])
 def get_update_scheduler():
     path = request.args.get("path")
     coordinator.save(path)
-    return '200'
+    return 200
 
 
 @app.route("/load", methods=['get'])
@@ -53,7 +54,20 @@ def get_update_scheduler():
     path = request.args.get("path")
     ts = request.args.get("ts")
     coordinator.load(path, ts)
-    return '200'
+    return 200
+
+
+@app.route("/validate", methods=['get'])
+def update_validation():
+    data = request.args.get('val')
+    data = np.float32(data)
+    coordinator.update_val(data)
+    return 200
+
+
+@app.route("/validate/finished", methods=['get'])
+def finish_validation():
+    return coordinator.finish_val()
 
 
 if __name__ == '__main__':
