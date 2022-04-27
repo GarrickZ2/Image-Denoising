@@ -26,8 +26,8 @@ class Trainer:
         self.criterion = criterion
         self.trainset = train_set
         self.valset = val_set
-        self.train_loader = DataLoader(train_set, batch_size=batch, shuffle=True)
-        self.val_loader = DataLoader(val_set, batch_size=batch)
+        self.train_loader = DataLoader(train_set, batch_size=batch, shuffle=True, num_workers=4)
+        self.val_loader = DataLoader(val_set, batch_size=batch, num_workers=4)
         self.device = device
         self.optimG = optimG
         self.optimD = optimD
