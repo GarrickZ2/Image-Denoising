@@ -180,7 +180,7 @@ class Trainer:
                 self.history['train_loss_G'] = step_loss_G / self.batch
                 self.history['train_loss_D'] = step_loss_D / self.batch
                 process.set_description(
-                    f"Epoch {epoch + 1}: generator_train_loss={self.history['train_loss_G'][-1]}, discriminator_train_loss={self.history['train_loss_D'][-1]}")
+                    f"Epoch {epoch + 1}: generator_train_loss={step_loss_G/self.batch}, discriminator_train_loss={step_loss_D/self.batch}")
                 self.schedD.step()
                 self.schedG.step()
                 if self.history['step'] % 2000 == 0:
