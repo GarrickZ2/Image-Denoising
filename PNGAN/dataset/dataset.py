@@ -115,15 +115,18 @@ class SIDDSmallDataset(Dataset):
         if self.fake_dirs is None:
             fake_noisy = self.noise_generator(clean)
         else:
-            fake_noisy = torch.load(self.input_dirs[idx])
+            fake_noisy = torch.load(self.fake_dirs[idx])
 
         return clean, true_noisy, fake_noisy
 
     def __process_fake_noise_iamge(self, work_id, worker_num):
-        process = tqdm.tqdm(range(0, len(self.input_dirs), worker_num))
-        for idx in process:
+        process = tqdm.tqdm(range(len(self.input_dirs)/worker_num + 1))
+        for rounds in process:
+            idx = rounds * worker_num + work_id
+            if idx >= len(self.input_dirs):
+                break
             process.set_description(f'Worker Id: {work_id}')
-            filename = self.target_dirs[idx+work_id]
+            filename = self.target_dirs[idx]
             dirs = filename.split('/')
             dirs[-1] = dirs[-1].split('.')[0] + '.pt'
             dirs[-2] = 'noisy_crops'
@@ -135,6 +138,7 @@ class SIDDSmallDataset(Dataset):
                 torch.set_rng_state(state)
             fake_noisy = self.noise_generator(clean)
             torch.save(fake_noisy, target_filename)
+        process.set_description(f'Worker {work_id} Finished Job')
         process.close()
 
     def generate_noise_image(self, workers):
@@ -154,7 +158,7 @@ class SIDDSmallDataset(Dataset):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', type=str, default='./Datasets', help='root dir')
-    parser.add_argument('--workers', type=int, default=8, help='How many workers work together')
+    parser.add_argument('--workers', type=int, default=4, help='How many workers work together')
     args = parser.parse_args(args=[])
 
     train_ds = SIDDSmallDataset(args.root, noise_generator=AdditiveGaussianWhiteNoise())
