@@ -106,6 +106,8 @@ class SIDDSmallDataset(Dataset):
             return None, None, None
         else:
             self.skip_num = 0
+        if self.fake_dirs is not None:
+            return torch.load(self.fake_dirs[idx])
 
         clean = Image.open(self.target_dirs[idx])
         true_noisy = Image.open(self.input_dirs[idx])
@@ -116,10 +118,7 @@ class SIDDSmallDataset(Dataset):
             torch.set_rng_state(state)
             true_noisy = self.transform(true_noisy)
 
-        if self.fake_dirs is None:
-            fake_noisy = self.noise_generator(clean)
-        else:
-            fake_noisy = torch.load(self.fake_dirs[idx])
+        fake_noisy = self.noise_generator(clean)
 
         return clean, true_noisy, fake_noisy
 
@@ -136,12 +135,16 @@ class SIDDSmallDataset(Dataset):
             dirs[-2] = 'noisy_crops'
             target_filename = "/".join(dirs)
             clean = Image.open(filename)
+            true_noisy = Image.open(self.input_dirs[idx])
             if self.transform:
                 state = torch.get_rng_state()
                 clean = self.transform(clean)
                 torch.set_rng_state(state)
+                true_noisy = self.transform(true_noisy)
+
             fake_noisy = self.noise_generator(clean)
-            torch.save(fake_noisy, target_filename)
+            data = (clean, true_noisy, fake_noisy)
+            torch.save(data, target_filename)
         process.set_description(f'Worker {work_id} Finished Job')
         process.close()
 
