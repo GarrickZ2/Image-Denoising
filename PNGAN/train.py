@@ -15,11 +15,14 @@ class Trainer:
         self.history = {
             'train_loss_G': [],
             'train_loss_D': [],
+            'train_loss_G_epoch': [],
+            'train_loss_D_epoch': [],
             'val_loss': [],
             'epoch': 0,
             'best_val_loss': np.inf,
             'step': 0,
         }
+        self.batch = batch
         self.criterion = criterion
         self.trainset = train_set
         self.valset = val_set
@@ -174,8 +177,10 @@ class Trainer:
                 step_loss_D = self.__train_discriminator_step(irns, isyns)
                 train_loss_G += step_loss_G
                 train_loss_D += step_loss_D
+                self.history['train_loss_G'] = step_loss_G / self.batch
+                self.history['train_loss_D'] = step_loss_D / self.batch
                 process.set_description(
-                    f"Epoch {epoch + 1}: generator_train_loss={step_loss_G}, discriminator_train_loss={step_loss_D}")
+                    f"Epoch {epoch + 1}: generator_train_loss={self.history['train_loss_G'][-1]}, discriminator_train_loss={self.history['train_loss_D'][-1]}")
                 self.schedD.step()
                 self.schedG.step()
                 if self.history['step'] % 2000 == 0:
@@ -186,8 +191,8 @@ class Trainer:
 
             train_loss_G /= len(self.trainset)
             train_loss_D /= len(self.trainset)
-            self.history['train_loss_G'].append(train_loss_G)
-            self.history['train_loss_D'].append(train_loss_D)
+            self.history['train_loss_G_epoch'].append(train_loss_G)
+            self.history['train_loss_D_epoch'].append(train_loss_D)
             process.close()
 
             self.netD.eval()

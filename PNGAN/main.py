@@ -10,8 +10,8 @@ from PNGAN.train import Trainer
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 args.pre_train = './experiment/ridnet.pt'
-train_ds = SIDDSmallDataset('./Datasets')
-val_ds = SIDDSmallDataset('./Datasets', data_type='val')
+train_ds = SIDDSmallDataset('./Datasets', noise_generator=AdditiveGaussianWhiteNoise())
+val_ds = SIDDSmallDataset('./Datasets', data_type='val', noise_generator=AdditiveGaussianWhiteNoise())
 print(len(train_ds), len(val_ds))
 
 netD = Discriminator().to(device)

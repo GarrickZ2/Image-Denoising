@@ -13,6 +13,19 @@ default_transform = transforms.Compose([
 ])
 
 
+class AdditiveGaussianWhiteNoise(object):
+    def __init__(self, mean=0., std=25.):
+        self.std = std
+        self.mean = mean
+
+    def __call__(self, tensor):
+        return tensor + (torch.randn(tensor.size()) * self.std + self.mean) / 255.
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+
+
+
 def random_noise_levels_sidd():
     """ Where read_noise in SIDD is not 0 """
     log_min_shot_noise = torch.log10(torch.Tensor([0.0001]))
