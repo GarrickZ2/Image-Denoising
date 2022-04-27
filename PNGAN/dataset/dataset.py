@@ -124,7 +124,7 @@ class SIDDSmallDataset(Dataset):
         return clean, true_noisy, fake_noisy
 
     def __process_fake_noise_iamge(self, work_id, worker_num):
-        process = tqdm.tqdm(range(len(self.input_dirs) / worker_num + 1))
+        process = tqdm.tqdm(range(int(len(self.input_dirs) / worker_num) + 1))
         for rounds in process:
             idx = rounds * worker_num + work_id
             if idx >= len(self.input_dirs):
