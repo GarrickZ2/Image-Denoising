@@ -10,7 +10,6 @@ from torch.utils.data import Dataset
 import multiprocessing as mp
 import argparse
 
-
 default_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(0.5),
     transforms.RandomVerticalFlip(0.5),
@@ -28,7 +27,6 @@ class AdditiveGaussianWhiteNoise(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
-
 
 
 def random_noise_levels_sidd():
@@ -73,6 +71,7 @@ class SIDDSmallDataset(Dataset):
                  parallel=False,
                  machine_num=2,
                  machine_id=0,
+                 skip_num=0,
                  load_fake=False,
                  limit=None):
         self.root_dir = root_dir
@@ -80,6 +79,7 @@ class SIDDSmallDataset(Dataset):
         self.input_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/input_crops/**"))
         self.target_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/target_crops/**"))
         self.fake_dirs = None
+        self.skip_num = skip_num
         if load_fake:
             self.fake_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/noisy_crops/**"))
         self.transform = transform
@@ -102,6 +102,10 @@ class SIDDSmallDataset(Dataset):
             idx = origin_id * self.machine_num + self.machine_id
         else:
             idx = origin_id
+        if idx < self.skip_num:
+            return None, None, None
+        else:
+            self.skip_num = 0
 
         clean = Image.open(self.target_dirs[idx])
         true_noisy = Image.open(self.input_dirs[idx])
@@ -120,7 +124,7 @@ class SIDDSmallDataset(Dataset):
         return clean, true_noisy, fake_noisy
 
     def __process_fake_noise_iamge(self, work_id, worker_num):
-        process = tqdm.tqdm(range(len(self.input_dirs)/worker_num + 1))
+        process = tqdm.tqdm(range(len(self.input_dirs) / worker_num + 1))
         for rounds in process:
             idx = rounds * worker_num + work_id
             if idx >= len(self.input_dirs):
@@ -147,7 +151,7 @@ class SIDDSmallDataset(Dataset):
             os.mkdir(f'{self.root_dir}/{self.data_type}/SIDD/noisy_crops/')
         process_pool = []
         for i in range(workers):
-            proc = mp.Process(target=self.__process_fake_noise_iamge, args=(i, workers, ))
+            proc = mp.Process(target=self.__process_fake_noise_iamge, args=(i, workers,))
             process_pool.append(proc)
             proc.start()
         for each in process_pool:
