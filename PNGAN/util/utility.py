@@ -203,3 +203,19 @@ def make_scheduler(args, my_optimizer):
         )
 
     return scheduler
+
+def visualize(*img_sets):
+    """
+    Visualize image sets,
+    >>> clean, fake, real = next(iter(train_loader))
+    >>> visualize(clean, fake, real) # each input is a tensor of (batch_size, 3, 128, 128)
+    >>> aligned = trainer.generator_predict(fake.to(device)).detach().cpu()
+    >>> visualize(clean, fake, real, aligned) # the function can take multiple arguments and display them in multiple columns
+    """
+    num_categories = len(img_sets)
+    num_examples = len(img_sets[0])
+    fig, axes = plt.subplots(num_examples, num_categories, figsize=(10 * num_categories, 10 * num_examples))
+    
+    for category in range(num_categories):
+        for example in range(num_examples):
+            axes[example, category].imshow(img_sets[category][example].permute(1,2,0))
