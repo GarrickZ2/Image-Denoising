@@ -15,8 +15,8 @@ class DLoss(nn.Module):
     def forward(self, cd_rn, cd_fn):
         dra_rn = self.sigmoid(cd_rn - torch.mean(cd_fn, dim=0))
         dra_fn = self.sigmoid(cd_fn - torch.mean(cd_rn, dim=0))
-        result1 = -torch.mean(torch.mean(torch.log(dra_rn), dim=0) + torch.mean(torch.log(1 - dra_fn), dim=0))
-        result2 = -torch.mean(torch.mean(torch.log(1 - dra_rn), dim=0) + torch.mean(torch.log(dra_fn), dim=0))
+        result1 = -torch.mean(torch.mean(torch.log(torch.clamp(dra_rn, 1e-10)), dim=0) + torch.mean(torch.log(torch.clamp(1 - dra_fn, 1e-10)), dim=0))
+        result2 = -torch.mean(torch.mean(torch.log(torch.clamp(1 - dra_rn, 1e-10)), dim=0) + torch.mean(torch.log(torch.clamp(dra_fn, 1e-10)), dim=0))
         return result1 - result2
 
 class GLoss(nn.Module):
@@ -47,7 +47,7 @@ class GLoss(nn.Module):
 
         dra_rn = self.sigmoid(cd_rn - torch.mean(cd_fn, dim=0))
         dra_fn = self.sigmoid(cd_fn - torch.mean(cd_rn, dim=0))
-        lg_loss = -torch.mean(torch.mean(torch.log(1 - dra_rn), dim=0) + torch.mean(torch.log(dra_fn), dim=0))
+        lg_loss = -torch.mean(torch.mean(torch.log(torch.clamp(1 - dra_rn, 1e-10)), dim=0) + torch.mean(torch.log(torch.clamp(dra_fn, 1e-10)), dim=0))
 
         return l1_loss + self.lambda_p * lp_loss + self.lambda_ra * lg_loss
 

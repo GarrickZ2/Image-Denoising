@@ -161,8 +161,6 @@ class Trainer:
             train_loss_D = 0.0
             process = tqdm.tqdm(self.train_loader)
             for i, (_, irns, isyns) in enumerate(process):
-                if i < self.history['step']:
-                    continue
                 self.history['step'] = i
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
