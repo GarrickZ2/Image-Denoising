@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 
 class Trainer:
-    def __init__(self, netG, netD, train_set, val_set, criterion_d, criterion_g, performance, optimD, optimG, schedD, schedG, device, batch=8):
+    def __init__(self, netG, netD, train_set, val_set, criterion_d, criterion_g, performance, optimD, optimG, schedD, schedG, device, bad_dir_path, batch=8):
         self.history = {
             'train_loss_G': [],
             'train_loss_D': [],
@@ -36,6 +36,7 @@ class Trainer:
         self.schedG = schedG
         self.schedD = schedD
         self.ts = int(datetime.timestamp(datetime.now()))
+        self.bad_dir_path = bad_dir_path
 
     def __train_generator_step(self, irns, isyns):
         self.optimG.zero_grad()
@@ -43,6 +44,9 @@ class Trainer:
         _, cd_irns = self.netD(irns)
         _, cd_ifns = self.netD(ifns)
         loss_g = self.criterion_g(irns, ifns, cd_irns, cd_ifns)
+        if loss_g.item() is torch.nan:
+            torch.save({'irns': irns, 'isyns': isyns}, os.path.join(self.bad_dir_path, "data.pt"))
+            self.save(os.path.join(self.bad_dir_path, "generator.pt"))
         loss_g.backward()
         self.optimG.step()
         return loss_g.item()
@@ -53,6 +57,9 @@ class Trainer:
         _, cd_irns = self.netD(irns)
         _, cd_ifns = self.netD(ifns)
         loss_d = self.criterion_d(cd_irns, cd_ifns)
+        if loss_d.item() is torch.nan:
+            torch.save({'irns': irns, 'isyns': isyns}, os.path.join(self.bad_dir_path, "data.pt"))
+            self.save(os.path.join(self.bad_dir_path, "discriminator.pt"))
         loss_d.backward()
         self.optimD.step()
         return loss_d.item(), ifns
@@ -167,10 +174,7 @@ class Trainer:
                 step_loss_G = self.__train_generator_step(irns, isyns)
                 step_loss_D, ifns = self.__train_discriminator_step(irns, isyns)
                 if step_loss_G is torch.nan or step_loss_D is torch.nan:
-                    bad_dir_path = os.path.join(dir_path, "bad_ckpt")
-                    torch.save({'irns': irns, 'isyns': isyns}, os.path.join(bad_dir_path, "data.pt"))
-                    self.save(bad_dir_path)
-                    print("NAN!")
+                    print(f"step_loss_G={step_loss_G}, step_loss_D={step_loss_D}")
                     return
                 train_loss_G += step_loss_G
                 train_loss_D += step_loss_D
