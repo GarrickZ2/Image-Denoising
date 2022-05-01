@@ -4,26 +4,26 @@ import numpy as np
 import torch
 import tqdm
 from torch.utils.data import DataLoader
-import requests
-import pickle
-import base64
 from matplotlib import pyplot as plt
 
 
 class Trainer:
-    def __init__(self, netG, netD, train_set, val_set, criterion, optimG, optimD, schedG, schedD, device, batch=8):
+    def __init__(self, netG, netD, train_set, val_set, criterion_d, criterion_g, performance, optimD, optimG, schedD, schedG, device, batch=8):
         self.history = {
             'train_loss_G': [],
             'train_loss_D': [],
             'train_loss_G_epoch': [],
             'train_loss_D_epoch': [],
+            'performance': [],
             'val_loss': [],
             'epoch': 0,
             'best_val_loss': np.inf,
             'step': 0,
         }
         self.batch = batch
-        self.criterion = criterion
+        self.criterion_d = criterion_d
+        self.criterion_g = criterion_g
+        self.performance = performance
         self.trainset = train_set
         self.valset = val_set
         self.train_loader = DataLoader(train_set, batch_size=batch, shuffle=True, num_workers=4)
@@ -38,35 +38,33 @@ class Trainer:
         self.ts = int(datetime.timestamp(datetime.now()))
 
     def __train_generator_step(self, irns, isyns):
-        self.netD.eval()
-        self.netG.train(mode=True)
         self.optimG.zero_grad()
         ifns = self.netG(isyns)
         _, cd_irns = self.netD(irns)
         _, cd_ifns = self.netD(ifns)
-        lossG = self.criterion(irns, ifns, cd_irns, cd_ifns)
-        lossG.backward()
+        loss_g = self.criterion_g(cd_irns, cd_ifns)
+        loss_g.backward()
         self.optimG.step()
-        return lossG.item()
+        return loss_g.item()
 
     def __train_discriminator_step(self, irns, isyns):
-        self.netG.eval()
-        self.netD.train(mode=True)
         self.optimD.zero_grad()
         ifns = self.netG(isyns)
         _, cd_irns = self.netD(irns)
         _, cd_ifns = self.netD(ifns)
-        lossD = self.criterion(irns, ifns, cd_irns, cd_ifns)
-        lossD.backward()
+        loss_d = self.criterion_d(cd_irns, cd_ifns)
+        loss_d.backward()
         self.optimD.step()
-        return lossD.item()
+        return loss_d.item(), ifns
 
     def __val_step(self, irns, isyns, netG, netD):
         ifns = netG(isyns)
         _, cd_irns = netD(irns)
         _, cd_ifns = netD(ifns)
-        loss = self.criterion(irns, ifns, cd_irns, cd_ifns)
-        return loss.item()
+        loss_d = self.criterion_d(cd_irns, cd_ifns)
+        loss_g = self.criterion_g(cd_irns, cd_ifns)
+        performance = self.performance(irns, ifns, loss_d, loss_g)
+        return loss_d.item(), loss_g.item(), performance.item()
 
     def plot(self, dir_path, show=False):
         if not os.path.exists(f'{dir_path}/result'):
@@ -155,15 +153,10 @@ class Trainer:
         self.__load_state(checkpoint)
         print('Load Model from epoch: ', epoch_num)
 
-    def finish_val(self, loss):
-        if isinstance(self, ParallelTrainer):
-            return requests.get(f"{self.url}/validate/finished")
-        return loss
-
     def train(self, dir_path, num_epochs=10):
-        self.netG.train(mode=True)
-        self.netD.train(mode=True)
         for epoch in range(num_epochs):
+            self.netD.train(mode=True)
+            self.netG.train(mode=True)
             train_loss_G = 0.0
             train_loss_D = 0.0
             process = tqdm.tqdm(self.train_loader)
@@ -174,20 +167,22 @@ class Trainer:
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
                 step_loss_G = self.__train_generator_step(irns, isyns)
-                step_loss_D = self.__train_discriminator_step(irns, isyns)
+                step_loss_D, ifns = self.__train_discriminator_step(irns, isyns)
                 train_loss_G += step_loss_G
                 train_loss_D += step_loss_D
+                performance = self.performance(irns, ifns, step_loss_G, step_loss_D)
                 self.history['train_loss_G'] = step_loss_G / self.batch
                 self.history['train_loss_D'] = step_loss_D / self.batch
+                self.history['performance'] = performance / self.batch
+
                 process.set_description(
-                    f"Epoch {epoch + 1}: generator_train_loss={step_loss_G/self.batch}, discriminator_train_loss={step_loss_D/self.batch}")
+                    f"Epoch {epoch + 1}:performance:{performance/self.batch},"
+                    f" generator_train_loss={step_loss_G/self.batch}, discriminator_train_loss={step_loss_D/self.batch}")
                 self.schedD.step()
                 self.schedG.step()
                 if self.history['step'] % 2000 == 0:
                     print('Saved the model for step', self.history['step'])
                     self.save(dir_path)
-                if i % 200 == 0:
-                    torch.cuda.empty_cache()
 
             train_loss_G /= len(self.trainset)
             train_loss_D /= len(self.trainset)
@@ -197,26 +192,30 @@ class Trainer:
 
             self.netD.eval()
             self.netG.eval()
-            val_loss = 0.0
+            val_ld_loss = 0.0
+            val_lg_loss = 0.0
+            val_performance = 0.0
             process = tqdm.tqdm(self.val_loader)
             for i, (_, irns, isyns) in enumerate(process):
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
-                val_loss += self.__val_step(irns, isyns, self.netG, self.netD)
-                if i % 200 == 0:
-                    torch.cuda.empty_cache()
+                ld_loss, lg_loss, performance = self.__val_step(irns, isyns, self.netG, self.netD)
+                val_ld_loss += ld_loss
+                val_lg_loss += lg_loss
+                val_performance += performance
 
-            val_loss = self.finish_val(val_loss)
-            self.history['val_loss'].append(val_loss)
+            val_lg_loss /= len(self.valset)
+            val_ld_loss /= len(self.valset)
+            val_performance /= len(self.valset)
+            self.history['val_loss'].append(val_performance)
             self.history['epoch'] += 1
-            print(
-                f"Epoch {self.history['epoch'] + 1}: val_loss={val_loss} generator_train_loss={train_loss_G}, "
-                f"discriminator_train_loss={train_loss_D}")
-            if self.history['epoch'] % 5 == 0:
+            print(f"Epoch {self.history['epoch'] + 1}: "
+                  f"val_d_loss={val_ld_loss}, val_g_loss={val_lg_loss}, val_perf={val_performance}")
+            if self.history['epoch'] % 1 == 0:
                 self.save(dir_path)
-            if val_loss < self.history['best_val_loss']:
+            if val_performance < self.history['best_val_loss']:
                 self.save(dir_path, best=True)
-                self.history['best_val_loss'] = val_loss
+                self.history['best_val_loss'] = val_performance
 
     def generator_predict(self, batch_data):
         self.netG.eval()
@@ -229,103 +228,3 @@ class Trainer:
         result = self.netD(batch_data)
         self.netD.train(mode=True)
         return result
-
-
-class ParallelTrainer(Trainer):
-    def __init__(self, netG, netD, train_set, val_set, criterion, optimG, optimD, schedG, schedD, device, url, batch=8):
-        super().__init__(netG, netD, train_set, val_set, criterion, optimG, optimD, schedG, schedD, device, batch)
-        self.url = url
-
-    def __train_generator_step_parallel(self, irns, isyns):
-        self.netD.eval()
-        self.netG.train(mode=True)
-        self.optimG.zero_grad()
-        ifns = self.netG(isyns)
-        _, cd_irns = self.netD(irns)
-        _, cd_ifns = self.netD(ifns)
-        lossG = self.criterion(irns, ifns, cd_irns, cd_ifns)
-        data = pickle.dumps(lossG)
-        data = base64.b64encode(data)
-        send_data = {'loss': data}
-        response = requests.post(f"{self.url}/generator", data=send_data).content
-        state_dict = pickle.loads(response)
-        self.netG.load_state_dict(state_dict)
-
-        return lossG.item()
-
-    def __train_discriminator_step_parallel(self, irns, isyns):
-        self.netG.eval()
-        self.netD.train(mode=True)
-        self.optimD.zero_grad()
-        ifns = self.netG(isyns)
-        _, cd_irns = self.netD(irns)
-        _, cd_ifns = self.netD(ifns)
-        lossD = self.criterion(irns, ifns, cd_irns, cd_ifns)
-
-        data = pickle.dumps(lossD)
-        data = base64.b64encode(data)
-        send_data = {'loss': data}
-        response = requests.post(f"{self.url}/discriminator", data=send_data).content
-        state_dict = pickle.loads(response)
-        self.netD.load_state_dict(state_dict)
-
-        return lossD.item()
-
-    def __val_step_parallel(self, irns, isyns, netG, netD):
-        ifns = netG(isyns)
-        _, cd_irns = netD(irns)
-        _, cd_ifns = netD(ifns)
-        loss = self.criterion(irns, ifns, cd_irns, cd_ifns)
-        requests.get(f"{self.url}/validate?val={loss.item()}")
-        return loss.item()
-
-    def train(self, dir_path, num_epochs=10):
-        self.netG.train(mode=True)
-        self.netD.train(mode=True)
-        for epoch in range(num_epochs):
-            train_loss_G = 0.0
-            train_loss_D = 0.0
-            process = tqdm.tqdm(self.train_loader)
-            for i, (_, irns, isyns) in enumerate(process):
-                irns = irns.to(self.device)
-                isyns = isyns.to(self.device)
-                step_loss_G = self.__train_generator_step_parallel(irns, isyns)
-                step_loss_D = self.__train_discriminator_step_parallel(irns, isyns)
-                train_loss_G += step_loss_G
-                train_loss_D += step_loss_D
-                process.set_description(
-                    f"Epoch {epoch + 1}: generator_train_loss={step_loss_G}, discriminator_train_loss={step_loss_D}")
-                self.schedD.step()
-                self.schedG.step()
-                if i % 200 == 0:
-                    torch.cuda.empty_cache()
-
-            train_loss_G /= len(self.trainset)
-            train_loss_D /= len(self.trainset)
-            self.history['train_loss_G'].append(train_loss_G)
-            self.history['train_loss_D'].append(train_loss_D)
-            process.close()
-
-            self.netD.eval()
-            self.netG.eval()
-            val_loss = 0.0
-            process = tqdm.tqdm(self.val_loader)
-            for i, (_, irns, isyns) in enumerate(process):
-                irns = irns.to(self.device)
-                isyns = isyns.to(self.device)
-                val_loss += self.__val_step_parallel(irns, isyns, self.netG, self.netD)
-                if i % 200 == 0:
-                    torch.cuda.empty_cache()
-
-            val_loss = self.finish_val(val_loss)
-            self.history['val_loss'].append(val_loss)
-            self.history['epoch'] += 1
-            print(
-                f"Epoch {self.history['epoch'] + 1}: val_loss={val_loss} generator_train_loss={train_loss_G}, "
-                f"discriminator_train_loss={train_loss_D}")
-
-            if self.history['epoch'] % 5 == 0:
-                self.save(dir_path)
-            if val_loss < self.history['best_val_loss']:
-                self.save(dir_path, best=True)
-                self.history['best_val_loss'] = val_loss
