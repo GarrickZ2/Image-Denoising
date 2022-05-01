@@ -166,6 +166,12 @@ class Trainer:
                 isyns = isyns.to(self.device)
                 step_loss_G = self.__train_generator_step(irns, isyns)
                 step_loss_D, ifns = self.__train_discriminator_step(irns, isyns)
+                if step_loss_G is torch.nan or step_loss_D is torch.nan:
+                    bad_dir_path = os.path.join(dir_path, "bad_ckpt")
+                    torch.save({'irns': irns, 'isyns': isyns}, os.path.join(bad_dir_path, "data.pt"))
+                    self.save(bad_dir_path)
+                    print("NAN!")
+                    return
                 train_loss_G += step_loss_G
                 train_loss_D += step_loss_D
                 performance = self.performance(irns, ifns, step_loss_G, step_loss_D)
