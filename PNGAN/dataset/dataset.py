@@ -14,8 +14,14 @@ default_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(0.5),
     transforms.RandomVerticalFlip(0.5),
     transforms.ToTensor(),
+    transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
 ])
 
+def denormalize(tensors, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+  """ Denormalizes image tensors using mean and std """
+  for c in range(3):
+      tensors[:, c].mul_(std[c]).add_(mean[c])
+  return torch.clamp(tensors, 0, 255)
 
 class AdditiveGaussianWhiteNoise(object):
     def __init__(self, mean=0., std=25.):
