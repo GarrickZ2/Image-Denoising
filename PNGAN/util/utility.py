@@ -204,7 +204,14 @@ def make_scheduler(args, my_optimizer):
 
     return scheduler
 
-def visualize(*img_sets):
+def denormalize(tensors, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+    """ Denormalizes image tensors using mean and std """
+    tensors = torch.clone(tensors)
+    for c in range(3):
+        tensors[:, c].mul_(std[c]).add_(mean[c])
+    return torch.clamp(tensors, 0, 255)
+
+def visualize(*img_sets, denorm=False):
     """
     Visualize image sets,
     >>> clean, fake, real = next(iter(train_loader))
@@ -212,6 +219,9 @@ def visualize(*img_sets):
     >>> aligned = trainer.generator_predict(fake.to(device)).detach().cpu()
     >>> visualize(clean, fake, real, aligned) # the function can take multiple arguments and display them in multiple columns
     """
+    if denorm:
+        img_sets = [denormalize(img_set) for img_set in img_sets]
+
     num_categories = len(img_sets)
     num_examples = len(img_sets[0])
     fig, axes = plt.subplots(num_examples, num_categories, figsize=(10 * num_categories, 10 * num_examples))
