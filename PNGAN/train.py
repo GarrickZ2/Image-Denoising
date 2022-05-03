@@ -7,7 +7,7 @@ import tqdm
 from torch.utils.data import DataLoader
 from matplotlib import pyplot as plt
 from skimage.util import view_as_blocks
-from dataset.dataset import fake_noise_model
+from PNGAN.dataset.dataset import fake_noise_model
 
 
 class Trainer:
