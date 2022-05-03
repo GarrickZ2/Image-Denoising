@@ -265,7 +265,7 @@ class Trainer:
 
         return clean, image, new_image[:-padding_w, 0:-padding_h, :]
 
-    def predict_dir(self, dir_path, dimension=800):
+    def predict_dir(self, dir_path, dimension=800, save_dir=None):
         clean_result = []
         fake_result = []
         gene_result = []
@@ -273,13 +273,20 @@ class Trainer:
         for root, dirs, files in os.walk(dir_path):
             for f in files:
                 paths.append(os.path.join(root, f))
-        print(f'There are total {len(paths)} files')
+
+        print(f'There are total {len(paths)} images')
 
         process = tqdm.tqdm(paths)
         for each in process:
             process.set_description(f"Processing with {each}")
             clean, fake, gene = self.predict_image(each, dimension)
-            clean_result.append(clean)
-            fake_result.append(fake)
-            gene_result.append(gene)
+            if save_dir is not None:
+                save_gene_path = os.path.join(save_dir, "gene", each.split(dir_path)[1])
+                cv2.imwrite(save_gene_path, gene)
+                save_fake_path = os.path.join(save_dir, "fake", each.split(dir_path)[1])
+                cv2.imwrite(save_fake_path, fake)
+            else:
+                clean_result.append(clean)
+                fake_result.append(fake)
+                gene_result.append(gene)
         return clean_result, fake_result, gene_result
