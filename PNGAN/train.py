@@ -225,9 +225,11 @@ class Trainer:
                 self.save(dir_path, best=True)
                 self.history['best_val_loss'] = val_performance
 
-    def generator_predict(self, batch_data):
+    def generator_predict(self, batch_data, clamp=False):
         self.netG.eval()
         result = self.netG(batch_data)
+        if clamp:
+            result = torch.clamp(result, 0., 1.,) # cap to 0 and 1
         self.netG.train(mode=True)
         return result
 
