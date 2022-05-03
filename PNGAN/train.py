@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from matplotlib import pyplot as plt
 from skimage.util import view_as_blocks
 from PNGAN.dataset.dataset import fake_noise_model
+from PIL import Image
 
 
 class Trainer:
@@ -265,7 +266,8 @@ class Trainer:
 
         return clean, image, new_image[:-padding_w, 0:-padding_h, :]
 
-    def predict_batch_image(self, dir_path, dimension=128, save_dir=None, noise_generator=fake_noise_model, skip_gene=False):
+    def predict_batch_image(self, dir_path, dimension=128, save_dir=None, noise_generator=fake_noise_model,
+                            skip_gene=False):
         if save_dir is None:
             save_dir = dir_path
         paths = []
@@ -291,12 +293,14 @@ class Trainer:
         files = []
         process = tqdm.tqdm(range(len(paths)))
         for index in process:
+            files.append(save_gene_paths[index])
             each = paths[index]
             clean = cv2.imread(each)
             image = cv2.normalize(clean, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
             image = noise_generator(torch.from_numpy(image)).numpy()
-            files.append(save_gene_paths[index])
-            cv2.imwrite(save_fake_paths[index], image)
+            im = np.clip(image * 255, 0, 255)
+            im = Image.fromarray(im.astype(np.uint8))
+            im.save(save_fake_paths[index])
             image = image.reshape(1, dimension, dimension, 3).transpose(0, 3, 1, 2)
             if input_patch_data is None:
                 input_patch_data = image
@@ -310,39 +314,11 @@ class Trainer:
             input_data = torch.from_numpy(input_patch_data).to(device)
             output_data = netG(input_data).cpu().detach().numpy().transpose(0, 2, 3, 1)
             for i in range(8):
-                cv2.imwrite(files[i], output_data[i])
+                im = np.clip(output_data[i] * 255, 0, 255)
+                im = Image.fromarray(im.astype(np.uint8))
+                im.save(save_gene_paths[index])
             files = []
             input_patch_data = None
 
         for param in netG.parameters():
             param.requires_grad = True
-
-    def predict_dir(self, dir_path, dimension=800, save_dir=None, noise_generator=fake_noise_model):
-        clean_result = []
-        fake_result = []
-        gene_result = []
-        paths = []
-        for root, dirs, files in os.walk(dir_path):
-            for f in files:
-                paths.append(os.path.join(root, f))
-
-        if save_dir is not None:
-            os.makedirs(save_dir + "/gene", exist_ok=True)
-            os.makedirs(save_dir + "/fake", exist_ok=True)
-
-        print(f'There are total {len(paths)} images')
-
-        process = tqdm.tqdm(paths)
-        for each in process:
-            process.set_description(f"Processing with {each}")
-            clean, fake, gene = self.predict_image(each, dimension, noise_generator=noise_generator)
-            if save_dir is not None:
-                save_gene_path = os.path.join(save_dir, "gene", each.split(dir_path)[1])
-                cv2.imwrite(save_gene_path, gene)
-                save_fake_path = os.path.join(save_dir, "fake", each.split(dir_path)[1])
-                cv2.imwrite(save_fake_path, fake)
-            else:
-                clean_result.append(clean)
-                fake_result.append(fake)
-                gene_result.append(gene)
-        return clean_result, fake_result, gene_result
