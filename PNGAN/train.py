@@ -220,13 +220,13 @@ class Trainer:
                 self.save(dir_path, best=True)
                 self.history['best_val_loss'] = val_performance
 
-    def predict_image(self, image_path, dimension=256):
+    def predict_image(self, image_path, dimension=256, noise_generator=fake_noise_model):
         device = self.device
         netG = self.netG.to(device)
         netG.eval()
         clean = cv2.imread(image_path)
         image = cv2.normalize(clean, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-        image = fake_noise_model(torch.from_numpy(image)).numpy()
+        image = noise_generator(torch.from_numpy(image)).numpy()
 
         padding_w = (image.shape[0] // dimension + 1) * dimension - image.shape[0]
         padding_h = (image.shape[1] // dimension + 1) * dimension - image.shape[1]
@@ -265,7 +265,7 @@ class Trainer:
 
         return clean, image, new_image[:-padding_w, 0:-padding_h, :]
 
-    def predict_dir(self, dir_path, dimension=800, save_dir=None):
+    def predict_dir(self, dir_path, dimension=800, save_dir=None, noise_generator=fake_noise_model):
         clean_result = []
         fake_result = []
         gene_result = []
@@ -279,7 +279,7 @@ class Trainer:
         process = tqdm.tqdm(paths)
         for each in process:
             process.set_description(f"Processing with {each}")
-            clean, fake, gene = self.predict_image(each, dimension)
+            clean, fake, gene = self.predict_image(each, dimension, noise_generator=noise_generator)
             if save_dir is not None:
                 save_gene_path = os.path.join(save_dir, "gene", each.split(dir_path)[1])
                 cv2.imwrite(save_gene_path, gene)
