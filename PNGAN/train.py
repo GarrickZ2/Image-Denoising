@@ -266,17 +266,22 @@ class Trainer:
         return clean, image, new_image[:-padding_w, 0:-padding_h, :]
 
     def predict_batch_image(self, dir_path, dimension=128, save_dir=None, noise_generator=fake_noise_model, skip_gene=False):
+        if save_dir is None:
+            save_dir = dir_path
         paths = []
+        save_gene_paths = []
+        save_fake_paths = []
         for root, dirs, files in os.walk(dir_path):
             for f in files:
                 paths.append(os.path.join(root, f))
-        if save_dir is not None:
-            os.makedirs(save_dir + "/gene", exist_ok=True)
-            os.makedirs(save_dir + "/fake", exist_ok=True)
+                save_gene_paths.append(os.path.join(save_dir, "gene", f))
+                save_fake_paths.append(os.path.join(save_dir, "fake", f))
+
+        os.makedirs(save_dir + "/gene", exist_ok=True)
+        os.makedirs(save_dir + "/fake", exist_ok=True)
 
         print(f'There are total {len(paths)} images')
 
-        process = tqdm.tqdm(paths)
         device = self.device
         netG = self.netG.to(device)
         netG.eval()
@@ -284,14 +289,14 @@ class Trainer:
             param.requires_grad = False
         input_patch_data = None
         files = []
-        for each in process:
+        process = tqdm.tqdm(range(len(paths)))
+        for index in process:
+            each = paths[index]
             clean = cv2.imread(each)
             image = cv2.normalize(clean, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
             image = noise_generator(torch.from_numpy(image)).numpy()
-            save_gene_path = os.path.join(save_dir, "gene", each.split(dir_path)[1])
-            files.append(save_gene_path)
-            save_fake_path = os.path.join(save_dir, "fake", each.split(dir_path)[1])
-            cv2.imwrite(save_fake_path, image)
+            files.append(save_gene_paths[index])
+            cv2.imwrite(save_fake_paths[index], image)
             image = image.reshape(1, dimension, dimension, 3).transpose(0, 3, 1, 2)
             if input_patch_data is None:
                 input_patch_data = image
