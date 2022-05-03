@@ -219,9 +219,9 @@ class Trainer:
                 self.save(dir_path, best=True)
                 self.history['best_val_loss'] = val_performance
 
-    def predict_image(self, image):
-        padding_w = (image.shape[0] // 128 + 1) * 128 - image.shape[0]
-        padding_h = (image.shape[1] // 128 + 1) * 128 - image.shape[1]
+    def predict_image(self, image, single_img_size=256):
+        padding_w = (image.shape[0] // single_img_size + 1) * single_img_size - image.shape[0]
+        padding_h = (image.shape[1] // single_img_size + 1) * single_img_size - image.shape[1]
         if padding_w % 2 == 0:
             padding_w_left = padding_w // 2
             padding_w_right = padding_w // 2
@@ -237,10 +237,10 @@ class Trainer:
         image = np.pad(image, ((padding_w_left, padding_w_right),
                                (padding_h_up, padding_h_down), (0, 0)), 'constant',
                        constant_values=((0, 0), (0, 0), (0, 0)))
-        patches = view_as_blocks(image, (128, 128, 3))
+        patches = view_as_blocks(image, (single_img_size, single_img_size, 3))
         width = patches.shape[0]
         length = patches.shape[1]
-        patches = patches.reshape(-1, 128, 128, 3).transpose(0, 3, 1, 2)
+        patches = patches.reshape(-1, single_img_size, single_img_size, 3).transpose(0, 3, 1, 2)
         self.netG.eval()
         result = None
         for each in range(0, patches.shape[0], self.batch):
@@ -252,7 +252,7 @@ class Trainer:
                 result = output_data
             else:
                 result = np.concatenate((result, output_data), axis=0)
-        result = result.reshape((width, length, 3, 128, 128)).transpose(0, 1, 3, 4, 2)
+        result = result.reshape((width, length, 3, single_img_size, single_img_size)).transpose(0, 1, 3, 4, 2)
         new_image = None
         for i in range(width):
             new_line = None
