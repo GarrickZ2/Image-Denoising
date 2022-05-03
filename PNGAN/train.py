@@ -5,6 +5,7 @@ import torch
 import tqdm
 from torch.utils.data import DataLoader
 from matplotlib import pyplot as plt
+from skimage.util import view_as_blocks
 
 
 class Trainer:
@@ -222,4 +223,33 @@ class Trainer:
         original_h = image.shape[1]
         padding_w = (original_w // 128 + 1) * 128 - original_w
         padding_h = (original_h // 128 + 1) * 128 - original_h
+        image = np.pad(image, ((padding_w/2, padding_w/2), (padding_h/2, padding_h/2), (0, 0)), 'constant',
+                       constant_values=((0, 0), (0, 0), (0, 0)))
+        patches = view_as_blocks(image, (128, 128, 3))
+        width = patches.shape[0]
+        length = patches.shape[1]
+        patches = patches.reshape(-1, 128, 128, 3).transpose(0, 3, 1, 2)
+        self.netG.eval()
+        result = None
+        for each in range(0, patches.shape[0], self.batch):
+            input_data = patches[each: each+8].to(self.device)
+            output_data = self.netG(input_data).cpu().detach().numpy()
+            if result is None:
+                result = output_data
+            else:
+                result = np.concatenate((result, output_data), axis=0)
+        result = result.reshape((width, length, 3, 128, 128)).transpose(0, 1, 3, 4, 2)
+        new_image = None
+        for i in range(width):
+            new_line = None
+            for j in range(length):
+                if new_line is None:
+                    new_line = result[i][j]
+                else:
+                    new_line = np.concatenate((new_line, result[i][j]), axis=1)
+            if new_image is None:
+                new_image = new_line
+            else:
+                new_image = np.concatenate((new_image, new_line), axis=1)
 
+        return new_image[padding_w/2:-padding_w/2, padding_h/2:-padding_h/2, :]
