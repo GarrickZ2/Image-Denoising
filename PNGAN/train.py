@@ -1,4 +1,5 @@
 import os
+import cv2
 from datetime import datetime
 import numpy as np
 import torch
@@ -219,11 +220,22 @@ class Trainer:
                 self.history['best_val_loss'] = val_performance
 
     def predict_image(self, image):
-        original_w = image.shape[0]
-        original_h = image.shape[1]
-        padding_w = (original_w // 128 + 1) * 128 - original_w
-        padding_h = (original_h // 128 + 1) * 128 - original_h
-        image = np.pad(image, ((padding_w/2, padding_w/2), (padding_h/2, padding_h/2), (0, 0)), 'constant',
+        padding_w = (image.shape[0] // 128 + 1) * 128 - image.shape[0]
+        padding_h = (image.shape[1] // 128 + 1) * 128 - image.shape[1]
+        if padding_w % 2 == 0:
+            padding_w_left = padding_w // 2
+            padding_w_right = padding_w // 2
+        else:
+            padding_w_left = padding_w // 2
+            padding_w_right = padding_w // 2 + 1
+        if padding_h % 2 == 0:
+            padding_h_up = padding_h // 2
+            padding_h_down = padding_h // 2
+        else:
+            padding_h_up = padding_h // 2
+            padding_h_down = padding_h // 2 + 1
+        image = np.pad(image, ((padding_w_left, padding_w_right),
+                               (padding_h_up, padding_h_down), (0, 0)), 'constant',
                        constant_values=((0, 0), (0, 0), (0, 0)))
         patches = view_as_blocks(image, (128, 128, 3))
         width = patches.shape[0]
@@ -232,7 +244,9 @@ class Trainer:
         self.netG.eval()
         result = None
         for each in range(0, patches.shape[0], self.batch):
-            input_data = patches[each: each+8].to(self.device)
+            im = cv2.normalize(patches[each: each + 8], None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX,
+                               dtype=cv2.CV_32F)
+            input_data = torch.from_numpy(im).to(self.device)
             output_data = self.netG(input_data).cpu().detach().numpy()
             if result is None:
                 result = output_data
@@ -250,6 +264,6 @@ class Trainer:
             if new_image is None:
                 new_image = new_line
             else:
-                new_image = np.concatenate((new_image, new_line), axis=1)
+                new_image = np.concatenate((new_image, new_line), axis=0)
 
-        return new_image[padding_w/2:-padding_w/2, padding_h/2:-padding_h/2, :]
+        return new_image[padding_w_left:-padding_w_right, padding_h_up:-padding_h_down, :]
