@@ -1,3 +1,4 @@
+import random
 import glob
 import pandas as pd
 import torch
@@ -13,6 +14,7 @@ import argparse
 default_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(0.5),
     transforms.RandomVerticalFlip(0.5),
+    transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.229, 0.225)),
     transforms.ToTensor(),
 ])
 
@@ -68,46 +70,37 @@ class SIDDSmallDataset(Dataset):
                  transform=default_transform,
                  noise_generator=fake_noise_model,
                  data_type='train',
-                 parallel=False,
-                 machine_num=2,
-                 machine_id=0,
-                 skip_num=0,
+                 random_load=False,
                  load_fake=False,
                  limit=None):
         self.root_dir = root_dir
         self.data_type = data_type
-        self.input_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/input_crops/**"))
-        self.target_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/target_crops/**"))
-        self.fake_dirs = None
-        self.skip_num = skip_num
+        self.input_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/input_crops/**")).tolist()
+        self.target_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/target_crops/**")).tolist()
+        self.load_fake = load_fake
         if load_fake:
-            self.fake_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/noisy_crops/**"))
+            self.input_dirs = pd.Series(glob.glob(f"{root_dir}/{data_type}/SIDD/noisy_crops/**")).tolist()
+
+        if random_load:
+            shuffle = list(zip(self.input_dirs, self.target_dirs))
+            random.shuffle(shuffle)
+            self.input_dirs, self.target_dirs = zip(*shuffle)
+
         self.transform = transform
+        self.normalize = transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.229, 0.225))
         self.noise_generator = noise_generator
-        self.parallel = parallel
-        self.machine_num = machine_num
-        self.machine_id = machine_id
         if limit is not None:
             self.input_dirs = self.input_dirs[:limit]
             self.target_dirs = self.target_dirs[:limit]
         self.length = len(self.input_dirs)
-        if self.parallel:
-            self.length = int(len(self.input_dirs) / self.machine_num)
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, origin_id):
-        if self.parallel:
-            idx = origin_id * self.machine_num + self.machine_id
-        else:
-            idx = origin_id
-        if idx < self.skip_num:
-            return None, None, None
-        else:
-            self.skip_num = 0
-        if self.fake_dirs is not None:
-            return torch.load(self.fake_dirs[idx])
+        idx = origin_id
+        if self.load_fake:
+            return torch.load(self.input_dirs[idx])
 
         clean = Image.open(self.target_dirs[idx])
         true_noisy = Image.open(self.input_dirs[idx])
@@ -119,6 +112,7 @@ class SIDDSmallDataset(Dataset):
             true_noisy = self.transform(true_noisy)
 
         fake_noisy = self.noise_generator(clean)
+        fake_noisy = self.normalize(fake_noisy)
 
         return clean, true_noisy, fake_noisy
 

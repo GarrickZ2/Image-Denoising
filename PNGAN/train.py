@@ -217,14 +217,9 @@ class Trainer:
                 self.save(dir_path, best=True)
                 self.history['best_val_loss'] = val_performance
 
-    def generator_predict(self, batch_data):
-        self.netG.eval()
-        result = self.netG(batch_data)
-        self.netG.train(mode=True)
-        return result
+    def predict_image(self, image):
+        original_w = image.shape[0]
+        original_h = image.shape[1]
+        padding_w = (original_w // 128 + 1) * 128 - original_w
+        padding_h = (original_h // 128 + 1) * 128 - original_h
 
-    def discriminator_predict(self, batch_data):
-        self.netD.eval()
-        result = self.netD(batch_data)
-        self.netD.train(mode=True)
-        return result
