@@ -219,7 +219,17 @@ class Trainer:
                 self.save(dir_path, best=True)
                 self.history['best_val_loss'] = val_performance
 
-    def predict_image(self, image, single_img_size=256):
+    def predict_image(self, image, single_img_size=256, whole_image=False, device=None):
+        if device is None:
+            device = self.device
+        netG = self.netG.to(device)
+        netG.eval()
+        if whole_image:
+            image = cv2.normalize(image, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+            input_data = torch.from_numpy(image).to(device)
+            input_data = input_data.reshape(1, image.shape[0], image.shape[1], 3).transpose(0, 3, 1, 2)
+            output_data = netG(input_data).cpu().detach().numpy()
+            return output_data.reshape(image.shape[0], image.shape[1], 3).transpose(1, 2, 0)
         padding_w = (image.shape[0] // single_img_size + 1) * single_img_size - image.shape[0]
         padding_h = (image.shape[1] // single_img_size + 1) * single_img_size - image.shape[1]
         if padding_w % 2 == 0:
@@ -241,13 +251,13 @@ class Trainer:
         width = patches.shape[0]
         length = patches.shape[1]
         patches = patches.reshape(-1, single_img_size, single_img_size, 3).transpose(0, 3, 1, 2)
-        self.netG.eval()
         result = None
-        for each in range(0, patches.shape[0], self.batch):
+        batch_size = 1024 // single_img_size + 1
+        for each in range(0, patches.shape[0], batch_size):
             im = cv2.normalize(patches[each: each + 8], None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX,
                                dtype=cv2.CV_32F)
-            input_data = torch.from_numpy(im).to(self.device)
-            output_data = self.netG(input_data).cpu().detach().numpy()
+            input_data = torch.from_numpy(im).to(device)
+            output_data = netG(input_data).cpu().detach().numpy()
             if result is None:
                 result = output_data
             else:
