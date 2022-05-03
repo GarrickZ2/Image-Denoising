@@ -202,7 +202,7 @@ def make_scheduler(args, my_optimizer):
     return scheduler
 
 
-def visualize(*img_sets):
+def visualize(*img_sets, permute=True):
     """
     Visualize image sets,
     >>> clean, fake, real = next(iter(train_loader))
@@ -216,4 +216,7 @@ def visualize(*img_sets):
 
     for category in range(num_categories):
         for example in range(num_examples):
-            axes[example, category].imshow(img_sets[category][example].permute(1, 2, 0))
+            if permute:
+                axes[example, category].imshow(img_sets[category][example].permute(1, 2, 0))
+            else:
+                axes[example, category].imshow(img_sets[category][example])
