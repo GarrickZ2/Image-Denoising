@@ -7,6 +7,7 @@ import tqdm
 from torch.utils.data import DataLoader
 from matplotlib import pyplot as plt
 from skimage.util import view_as_blocks
+from dataset.dataset import fake_noise_model
 
 
 class Trainer:
@@ -219,21 +220,24 @@ class Trainer:
                 self.save(dir_path, best=True)
                 self.history['best_val_loss'] = val_performance
 
-    def predict_image(self, image, single_img_size=256):
+    def predict_image(self, image_path, dimension=256):
         device = self.device
         netG = self.netG.to(device)
         netG.eval()
-        padding_w = (image.shape[0] // single_img_size + 1) * single_img_size - image.shape[0]
-        padding_h = (image.shape[1] // single_img_size + 1) * single_img_size - image.shape[1]
-        image = np.pad(image, ((0, padding_w),
-                               (0, padding_h), (0, 0)), 'constant',
-                       constant_values=((0, 0), (0, 0), (0, 0)))
-        patches = view_as_blocks(image, (single_img_size, single_img_size, 3))
+        clean = cv2.imread(image_path)
+        image = cv2.normalize(clean, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+        image = fake_noise_model(torch.from_numpy(image)).numpy()
+
+        padding_w = (image.shape[0] // dimension + 1) * dimension - image.shape[0]
+        padding_h = (image.shape[1] // dimension + 1) * dimension - image.shape[1]
+        image_pad = np.pad(image, ((0, padding_w), (0, padding_h), (0, 0)), 'constant',
+                           constant_values=((0, 0), (0, 0), (0, 0)))
+        patches = view_as_blocks(image_pad, (dimension, dimension, 3))
         width = patches.shape[0]
         length = patches.shape[1]
-        patches = patches.reshape(-1, single_img_size, single_img_size, 3).transpose(0, 3, 1, 2)
+        patches = patches.reshape(-1, dimension, dimension, 3).transpose(0, 3, 1, 2)
         result = None
-        batch_size = 1024 // single_img_size
+        batch_size = 1024 // dimension
         if batch_size == 0:
             batch_size = 1
         for each in range(0, patches.shape[0], batch_size):
@@ -245,7 +249,7 @@ class Trainer:
                 result = output_data
             else:
                 result = np.concatenate((result, output_data), axis=0)
-        result = result.reshape((width, length, 3, single_img_size, single_img_size)).transpose(0, 1, 3, 4, 2)
+        result = result.reshape((width, length, 3, dimension, dimension)).transpose(0, 1, 3, 4, 2)
         new_image = None
         for i in range(width):
             new_line = None
@@ -259,4 +263,4 @@ class Trainer:
             else:
                 new_image = np.concatenate((new_image, new_line), axis=0)
 
-        return new_image[:-padding_w, 0:-padding_h, :]
+        return clean, image, new_image[:-padding_w, 0:-padding_h, :]
