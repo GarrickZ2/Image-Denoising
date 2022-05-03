@@ -269,10 +269,17 @@ class Trainer:
         clean_result = []
         fake_result = []
         gene_result = []
+        paths = []
         for root, dirs, files in os.walk(dir_path):
             for f in files:
-                clean, fake, gene = self.predict_image(os.path.join(root, f), dimension)
-                clean_result.append(clean)
-                fake_result.append(fake)
-                gene_result.append(gene)
+                paths.append(os.path.join(root, f))
+        print(f'There are total {len(paths)} files')
+
+        process = tqdm.tqdm(paths)
+        for each in process:
+            process.set_description(f"Processing with {each}")
+            clean, fake, gene = self.predict_image(each, dimension)
+            clean_result.append(clean)
+            fake_result.append(fake)
+            gene_result.append(gene)
         return clean_result, fake_result, gene_result
