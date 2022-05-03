@@ -226,8 +226,8 @@ class Trainer:
         netG.eval()
         if whole_image:
             image = cv2.normalize(image, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+            image = image.reshape(1, image.shape[0], image.shape[1], 3).transpose(0, 3, 1, 2)
             input_data = torch.from_numpy(image).to(device)
-            input_data = input_data.reshape(1, image.shape[0], image.shape[1], 3).transpose(0, 3, 1, 2)
             output_data = netG(input_data).cpu().detach().numpy()
             return output_data.reshape(image.shape[0], image.shape[1], 3).transpose(1, 2, 0)
         padding_w = (image.shape[0] // single_img_size + 1) * single_img_size - image.shape[0]
