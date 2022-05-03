@@ -32,9 +32,13 @@ class AlignmentLoss(nn.Module):
         ridnet_model = ridnet.Model(args, checkpoint)
         self.ridnet = DataParallel(ridnet_model)
         self.ridnet.eval()
+        for param in self.ridnet.parameters():
+            param.requires_grad = False
 
         self.vgg = torchvision.models.vgg16(pretrained=True)
         self.vgg.eval()
+        for param in self.vgg.parameters():
+            param.requires_grad = False
 
         self.loss_l1 = nn.L1Loss(reduction='sum')
         self.loss_l2 = nn.MSELoss(reduction='sum')
