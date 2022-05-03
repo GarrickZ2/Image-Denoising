@@ -219,42 +219,25 @@ class Trainer:
                 self.save(dir_path, best=True)
                 self.history['best_val_loss'] = val_performance
 
-    def predict_image(self, image, single_img_size=256, whole_image=False, device=None):
-        if device is None:
-            device = self.device
+    def predict_image(self, image, single_img_size=256):
+        device = self.device
         netG = self.netG.to(device)
         netG.eval()
-        if whole_image:
-            image = cv2.normalize(image, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            image = image.reshape(1, image.shape[0], image.shape[1], 3).transpose(0, 3, 1, 2)
-            input_data = torch.from_numpy(image).to(device)
-            output_data = netG(input_data).cpu().detach().numpy()
-            return output_data.reshape(image.shape[0], image.shape[1], 3).transpose(1, 2, 0)
         padding_w = (image.shape[0] // single_img_size + 1) * single_img_size - image.shape[0]
         padding_h = (image.shape[1] // single_img_size + 1) * single_img_size - image.shape[1]
-        if padding_w % 2 == 0:
-            padding_w_left = padding_w // 2
-            padding_w_right = padding_w // 2
-        else:
-            padding_w_left = padding_w // 2
-            padding_w_right = padding_w // 2 + 1
-        if padding_h % 2 == 0:
-            padding_h_up = padding_h // 2
-            padding_h_down = padding_h // 2
-        else:
-            padding_h_up = padding_h // 2
-            padding_h_down = padding_h // 2 + 1
-        image = np.pad(image, ((padding_w_left, padding_w_right),
-                               (padding_h_up, padding_h_down), (0, 0)), 'constant',
+        image = np.pad(image, ((0, padding_w),
+                               (0, padding_h), (0, 0)), 'constant',
                        constant_values=((0, 0), (0, 0), (0, 0)))
         patches = view_as_blocks(image, (single_img_size, single_img_size, 3))
         width = patches.shape[0]
         length = patches.shape[1]
         patches = patches.reshape(-1, single_img_size, single_img_size, 3).transpose(0, 3, 1, 2)
         result = None
-        batch_size = 1024 // single_img_size + 1
+        batch_size = 1024 // single_img_size
+        if batch_size == 0:
+            batch_size = 1
         for each in range(0, patches.shape[0], batch_size):
-            im = cv2.normalize(patches[each: each + 8], None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX,
+            im = cv2.normalize(patches[each: each + batch_size], None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX,
                                dtype=cv2.CV_32F)
             input_data = torch.from_numpy(im).to(device)
             output_data = netG(input_data).cpu().detach().numpy()
@@ -276,4 +259,4 @@ class Trainer:
             else:
                 new_image = np.concatenate((new_image, new_line), axis=0)
 
-        return new_image[padding_w_left:-padding_w_right, padding_h_up:-padding_h_down, :]
+        return new_image[:-padding_w, 0:-padding_h, :]
