@@ -3,18 +3,14 @@ import math
 import time
 import datetime
 from functools import reduce
-
 import matplotlib
-
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
 import numpy as np
 import cv2 as misc
-
 import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lrs
+matplotlib.use('Agg')
 
 
 class timer:
@@ -129,6 +125,7 @@ class checkpoint:
             ndarr = normalized.byte().permute(1, 2, 0).cpu().numpy()
             misc.imwrite('{}{}.png'.format(filename, p), ndarr)
 
+
 def quantize(img, rgb_range):
     pixel_range = 255 / rgb_range
     return img.mul(pixel_range).clamp(0, 255).round().div(pixel_range)
@@ -204,6 +201,7 @@ def make_scheduler(args, my_optimizer):
 
     return scheduler
 
+
 def visualize(*img_sets):
     """
     Visualize image sets,
@@ -215,7 +213,7 @@ def visualize(*img_sets):
     num_categories = len(img_sets)
     num_examples = len(img_sets[0])
     fig, axes = plt.subplots(num_examples, num_categories, figsize=(10 * num_categories, 10 * num_examples))
-    
+
     for category in range(num_categories):
         for example in range(num_examples):
-            axes[example, category].imshow(img_sets[category][example].permute(1,2,0))
+            axes[example, category].imshow(img_sets[category][example].permute(1, 2, 0))

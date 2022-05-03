@@ -264,3 +264,16 @@ class Trainer:
                 new_image = np.concatenate((new_image, new_line), axis=0)
 
         return clean, image, new_image[:-padding_w, 0:-padding_h, :]
+
+    def predict_dir(self, dir_path, dimension=800):
+        clean_result = []
+        fake_result = []
+        gene_result = []
+        for root, dirs, files in os.walk(dir_path):
+            for d in dirs:
+                for file in files:
+                    clean, fake, gene = self.predict_image(os.path.join(root, d, file), dimension)
+                    clean_result.append(clean)
+                    fake_result.append(fake)
+                    gene_result.append(gene)
+        return clean_result, fake_result, gene_result
