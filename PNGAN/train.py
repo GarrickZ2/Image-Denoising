@@ -274,6 +274,10 @@ class Trainer:
             for f in files:
                 paths.append(os.path.join(root, f))
 
+        if save_dir is not None:
+            os.makedirs(save_dir + "/gene", exist_ok=True)
+            os.makedirs(save_dir + "/fake", exist_ok=True)
+
         print(f'There are total {len(paths)} images')
 
         process = tqdm.tqdm(paths)
