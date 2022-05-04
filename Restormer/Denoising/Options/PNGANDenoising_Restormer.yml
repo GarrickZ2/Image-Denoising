@@ -1,5 +1,5 @@
 # general settings
-name: RealDenoising_Restormer
+name: PNGANRealDenoising_Restormer
 model_type: ImageCleanModel
 scale: 1
 num_gpu: 1  # set num_gpu: 0 for cpu mode
