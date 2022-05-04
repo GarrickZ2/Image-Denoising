@@ -66,7 +66,7 @@ class Trainer:
         _, cd_irns = netD(irns)
         _, cd_ifns = netD(ifns)
         loss_d = self.criterion_d(cd_irns, cd_ifns)
-        loss_g = self.criterion_g(cd_irns, cd_ifns)
+        loss_g = self.criterion_g(irns, ifns, cd_irns, cd_ifns)
         performance = self.performance(irns, ifns, loss_d, loss_g)
         return loss_d.item(), loss_g.item(), performance.item()
 
@@ -165,8 +165,6 @@ class Trainer:
             train_loss_D = 0.0
             process = tqdm.tqdm(self.train_loader)
             for i, (_, irns, isyns) in enumerate(process):
-                if i < self.history['step']:
-                    continue
                 self.history['step'] = i
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
