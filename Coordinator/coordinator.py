@@ -46,6 +46,7 @@ class Coordinator:
         self.update_conditionG.acquire()
         self.g_machine += 1
         if self.g_machine == 1:
+            self.optimizerG.zero_grad()
             loss = data / self.machine_num
             self.history['train_lossG'].append(loss.item())
             loss.backward()
@@ -60,7 +61,6 @@ class Coordinator:
             self.history['train_lossG'][-1] += loss.item()
             loss.backward()
             self.history['step_G'] += 1
-            self.optimizerG.zero_grad()
             self.optimizerG.step()
             self.update_conditionG.notifyAll()
         self.g_machine -= 1
@@ -73,6 +73,7 @@ class Coordinator:
         self.d_machine += 1
         if self.d_machine == 1:
             loss = data / self.machine_num
+            self.optimizerD.zero_grad()
             self.history['train_lossD'].append(loss.item())
             loss.backward()
             self.update_conditionD.wait()
@@ -86,7 +87,6 @@ class Coordinator:
             self.history['train_lossD'][-1] += loss.item()
             loss.backward()
             self.history['step_D'] += 1
-            self.optimizerD.zero_grad()
             self.optimizerD.step()
             self.update_conditionD.notifyAll()
         self.d_machine -= 1
