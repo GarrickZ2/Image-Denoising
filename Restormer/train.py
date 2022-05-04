@@ -189,7 +189,7 @@ def main():
         current_iter = 0
 
     if opt['pretrained_weights']:
-        model.net_g.load_state_dict(opt.pretrained_weights)
+        model.net_g.load_state_dict(opt['pretrained_weights'])
 
     # create message logger (formatted outputs)
     msg_logger = MessageLogger(opt, current_iter, tb_logger)
