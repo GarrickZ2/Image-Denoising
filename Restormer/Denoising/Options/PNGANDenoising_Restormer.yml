@@ -10,8 +10,8 @@ datasets:
   train:
     name: TrainSet
     type: Dataset_PairedImage
-    dataroot_gt: ./Denoising/Datasets/train/PNGAN/target_crops
-    dataroot_lq: ./Denoising/Datasets/train/PNGAN/input_crops
+    dataroot_gt: ./Denoising/Datasets/train/PNGAN+SIDD/target_crops
+    dataroot_lq: ./Denoising/Datasets/train/PNGAN+SIDD/input_crops
     geometric_augs: true
 
     filename_tmpl: '{}'
@@ -21,7 +21,7 @@ datasets:
     # data loader
     use_shuffle: true
     num_worker_per_gpu: 8
-    batch_size_per_gpu: 8
+    batch_size_per_gpu: 4
 
     ### -------------Progressive training--------------------------
     # mini_batch_sizes: [8,5,4,2,1,1]             # Batch size per gpu   
@@ -43,8 +43,8 @@ datasets:
   val:
     name: ValSet
     type: Dataset_PairedImage
-    dataroot_gt: ./Denoising/Datasets/val/PNGAN/target_crops
-    dataroot_lq: ./Denoising/Datasets/val/PNGAN/input_crops
+    dataroot_gt: ./Denoising/Datasets/val/SIDD/target_crops
+    dataroot_lq: ./Denoising/Datasets/val/SIDD/input_crops
     io_backend:
       type: disk
 
