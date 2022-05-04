@@ -31,6 +31,7 @@ def parse_options(is_train=True):
         default='none',
         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
+    parser.add_argument('--pretrained_weights', type=str, help='Path to the pretrained weights')
     args = parser.parse_args()
     opt = parse(args.opt, is_train=is_train)
 
@@ -55,6 +56,7 @@ def parse_options(is_train=True):
         opt['manual_seed'] = seed
     set_random_seed(seed + opt['rank'])
 
+    opt['pretrained_weights'] = args.pretrained_weights
     return opt
 
 
@@ -185,6 +187,9 @@ def main():
         model = create_model(opt)
         start_epoch = 0
         current_iter = 0
+
+    if opt.pretrained_weights:
+        model.net_g.load_state_dict(opt.pretrained_weights)
 
     # create message logger (formatted outputs)
     msg_logger = MessageLogger(opt, current_iter, tb_logger)
