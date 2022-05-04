@@ -188,7 +188,7 @@ def main():
         start_epoch = 0
         current_iter = 0
 
-    if opt.pretrained_weights:
+    if opt['pretrained_weights']:
         model.net_g.load_state_dict(opt.pretrained_weights)
 
     # create message logger (formatted outputs)
