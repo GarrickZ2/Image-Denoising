@@ -19,6 +19,3 @@ test_pngan_with_best:
 
 test_pngan_with_epoch:
 	cd PNGAN && python main.py --load_models --load_dir $(load_dir) --load_epoch $(epoch_num) --test_only
-
-
-

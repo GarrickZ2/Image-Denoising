@@ -2,7 +2,6 @@
 .DS_Store
 __pycache__
 .ipynb_checkpoints
-data/
 runs/
 log*
 PNGAN/experiment/test

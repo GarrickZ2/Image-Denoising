@@ -1,5 +1,4 @@
 import torch
-
 import utility
 import data
 import model
@@ -14,12 +13,13 @@ checkpoint = utility.checkpoint(args)
 if checkpoint.ok:
     loader = data.Data(args)
     model = model.Model(args, checkpoint)
-    model = DataParallel(model)
+    model_data = DataParallel(model)
     loss = loss.Loss(args, checkpoint) if not args.test_only else None
-    t = Trainer(args, loader, model, loss, checkpoint)
+    t = Trainer(args, loader, model_data, loss, checkpoint)
     while not t.terminate():
-        # t.train()
-        t.test()
+        if args.test_only:
+            t.test()
+        else:
+            t.train()
 
     checkpoint.done()
-
