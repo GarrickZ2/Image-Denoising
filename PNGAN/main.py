@@ -8,6 +8,10 @@ from model.generator import *
 from model.discriminator import *
 import torch.optim.lr_scheduler as lr_scheduler
 
+print('Configuration:')
+print(args)
+print('=================')
+
 torch.manual_seed(args.seed)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -26,7 +30,6 @@ netG = Generator(args.n_colors, args.n_feats).to(device)
 
 criterion_d = DLoss().to(device)
 criterion_g = GLoss().to(device)
-performance = AlignmentLoss().to(device)
 
 optimizer_d = optim.Adam(netD.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
 optimizer_g = optim.Adam(netG.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
@@ -37,7 +40,7 @@ scheduler_g = lr_scheduler.CosineAnnealingLR(optimizer_g, T_max=int(args.lr_deca
 train_process = Trainer(netD, netG, train_ds, val_ds, criterion_d, criterion_g, optimizer_d, optimizer_g,
                         scheduler_d, scheduler_g, device, batch=args.batch_size)
 
-if args.load_load_models:
+if args.load_models:
     if args.load_best:
         train_process.load_latest(args.load_dir, args.timestamp, True)
     else:

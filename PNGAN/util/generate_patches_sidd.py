@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--size', type=int, default=128, help='train, test or train-test')
 parser.add_argument('--overlap', type=int, default=0, help='all or SIDD or DND')
 parser.add_argument('--padding', type=int, default=0, help='real or gaussian')
-args = parser.parse_args(args=[])
+args = parser.parse_args()
 
 patch_size = args.size
 overlap = args.overlap
