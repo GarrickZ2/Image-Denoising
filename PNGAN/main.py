@@ -28,5 +28,5 @@ schedulerG = lr_scheduler.CosineAnnealingLR(optimizerG, T_max=int(3e4), eta_min=
 
 train_process = Trainer(netG, netD, train_ds, val_ds, criterion_d, criterion_g, performance, optimizerD, optimizerG, schedulerD, schedulerG, device)
 
-train_process.train('./', num_epochs=1)
+train_process.train('./', num_epochs=100)
 train_process.save('./')

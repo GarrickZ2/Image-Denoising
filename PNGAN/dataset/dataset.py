@@ -14,10 +14,10 @@ import argparse
 default_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(0.5),
     transforms.RandomVerticalFlip(0.5),
-    transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.229, 0.225)),
     transforms.ToTensor(),
     transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
 ])
+
 
 class AdditiveGaussianWhiteNoise(object):
     def __init__(self, mean=0., std=25.):
@@ -26,7 +26,7 @@ class AdditiveGaussianWhiteNoise(object):
 
     def __call__(self, tensor):
         noise = (torch.randn(tensor.size()) * self.std + self.mean) / 255.
-        return torch.clamp(tensor + noise, 0., 1.,)
+        return torch.clamp(tensor + noise, 0., 1., )
 
     def __repr__(self):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
@@ -98,8 +98,7 @@ class SIDDSmallDataset(Dataset):
     def __len__(self):
         return self.length
 
-    def __getitem__(self, origin_id):
-        idx = origin_id
+    def __getitem__(self, idx):
         if self.load_fake:
             return torch.load(self.input_dirs[idx])
 

@@ -46,7 +46,7 @@ class Trainer:
         ifns = self.netG(isyns)
         _, cd_irns = self.netD(irns)
         _, cd_ifns = self.netD(ifns)
-        loss_g = self.criterion_g(cd_irns, cd_ifns)
+        loss_g = self.criterion_g(irns, ifns, cd_irns, cd_ifns)
         loss_g.backward()
         self.optimG.step()
         return loss_g.item()
