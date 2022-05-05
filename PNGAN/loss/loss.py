@@ -1,9 +1,9 @@
 import torch
 import torchvision
 from torch import nn
-from PNGAN.util import utility
-from PNGAN.util.option import args
-from PNGAN.model import ridnet
+from util import utility
+from util.option import args
+from model import ridnet
 from torch.nn import DataParallel
 
 

@@ -15,12 +15,11 @@ default_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(0.5),
     transforms.RandomVerticalFlip(0.5),
     transforms.ToTensor(),
-    # transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
 ])
 
 
 class AdditiveGaussianWhiteNoise(object):
-    def __init__(self, mean=0., std=25.):
+    def __init__(self, mean=0., std=50.):
         self.std = std
         self.mean = mean
 
@@ -112,7 +111,6 @@ class SIDDSmallDataset(Dataset):
             true_noisy = self.transform(true_noisy)
 
         fake_noisy = self.noise_generator(clean)
-        # fake_noisy = self.normalize(fake_noisy)
 
         return clean, true_noisy, fake_noisy
 

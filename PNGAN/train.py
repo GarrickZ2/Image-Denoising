@@ -1,18 +1,19 @@
 import os
 import cv2
-from datetime import datetime
-import numpy as np
-import torch
 import tqdm
-from torch.utils.data import DataLoader
-from matplotlib import pyplot as plt
-from skimage.util import view_as_blocks
-from PNGAN.dataset.dataset import fake_noise_model
+import torch
+import numpy as np
 from PIL import Image
+from datetime import datetime
+from matplotlib import pyplot as plt
+from torch.utils.data import DataLoader
+from skimage.util import view_as_blocks
+from dataset.dataset import fake_noise_model
 
 
 class Trainer:
-    def __init__(self, net_d, net_g, train_set, val_set, criterion_d, criterion_g, optimD, optimG, schedD, schedG, device, batch=8):
+    def __init__(self, net_d, net_g, train_set, val_set, criterion_d, criterion_g, optim_d, optim_g, sche_d, sche_g,
+                 device, batch=8):
         self.history = {
             'train_loss_G': [],
             'train_loss_D': [],
@@ -26,17 +27,17 @@ class Trainer:
         self.batch = batch
         self.criterion_d = criterion_d
         self.criterion_g = criterion_g
-        self.trainset = train_set
-        self.valset = val_set
+        self.train_set = train_set
+        self.val_set = val_set
         self.train_loader = DataLoader(train_set, batch_size=batch, shuffle=True, num_workers=4)
         self.val_loader = DataLoader(val_set, batch_size=batch, num_workers=4)
         self.device = device
-        self.optimG = optimG
-        self.optimD = optimD
+        self.optimG = optim_g
+        self.optimD = optim_d
         self.netD = net_d
         self.netG = net_g
-        self.schedG = schedG
-        self.schedD = schedD
+        self.sche_g = sche_g
+        self.sche_d = sche_d
         self.ts = int(datetime.timestamp(datetime.now()))
 
     def __train_generator_step(self, irns, isyns):
@@ -107,27 +108,27 @@ class Trainer:
             os.mkdir(f'{dir_path}/result')
         if not os.path.exists(f'{dir_path}/result/{self.ts}'):
             os.mkdir(f'{dir_path}/result/{self.ts}')
-        model_path = f'{dir_path}/result/{self.ts}/epoch_{self.history["epoch"]}_{self.history["step"]}.pt'
-        store_dictory = {
+        model_path = f'{dir_path}/result/{self.ts}/epoch_{self.history["epoch"]}.pt'
+        store_directory = {
             'modelD': self.netD.state_dict(),
             'modelG': self.netG.state_dict(),
-            'schedG': self.schedG.state_dict(),
-            'schedD': self.schedD.state_dict(),
+            'schedG': self.sche_g.state_dict(),
+            'schedD': self.sche_d.state_dict(),
             'optimG': self.optimG.state_dict(),
             'optimD': self.optimD.state_dict(),
             'history': self.history
         }
-        torch.save(store_dictory, model_path)
-        torch.save(store_dictory, f'{dir_path}/result/{self.ts}/model.pt')
+        torch.save(store_directory, model_path)
+        torch.save(store_directory, f'{dir_path}/result/{self.ts}/model.pt')
         if best:
-            torch.save(store_dictory, f'{dir_path}/result/{self.ts}/model_best.pt')
+            torch.save(store_directory, f'{dir_path}/result/{self.ts}/model_best.pt')
 
     def __load_state(self, store_dic):
         self.history = store_dic['history']
         self.netD.load_state_dict(store_dic['modelD'])
         self.netG.load_state_dict(store_dic['modelG'])
-        self.schedD.load_state_dict(store_dic['schedD'])
-        self.schedG.load_state_dict(store_dic['schedG'])
+        self.sche_d.load_state_dict(store_dic['schedD'])
+        self.sche_g.load_state_dict(store_dic['schedG'])
         self.optimG.load_state_dict(store_dic['optimG'])
         self.optimD.load_state_dict(store_dic['optimD'])
 
@@ -158,30 +159,30 @@ class Trainer:
         for epoch in range(num_epochs):
             self.netD.train(mode=True)
             self.netG.train(mode=True)
-            train_loss_G = 0.0
-            train_loss_D = 0.0
+            train_loss_g = 0.0
+            train_loss_d = 0.0
             process = tqdm.tqdm(self.train_loader)
             for i, (_, irns, isyns) in enumerate(process):
                 self.history['step'] = i
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
-                step_loss_G = self.__train_generator_step(irns, isyns)
-                step_loss_D = self.__train_discriminator_step(irns, isyns)
-                train_loss_G += step_loss_G
-                train_loss_D += step_loss_D
-                self.history['train_loss_G'] = step_loss_G / self.batch
-                self.history['train_loss_D'] = step_loss_D / self.batch
+                step_loss_g = self.__train_generator_step(irns, isyns)
+                step_loss_d = self.__train_discriminator_step(irns, isyns)
+                train_loss_g += step_loss_g
+                train_loss_d += step_loss_d
+                self.history['train_loss_g'] = step_loss_g / self.batch
+                self.history['train_loss_d'] = step_loss_d / self.batch
 
                 process.set_description(
                     f"Epoch {epoch + 1}:"
-                    f" generator_train_loss={step_loss_G/self.batch}, discriminator_train_loss={step_loss_D/self.batch}")
-                self.schedD.step()
-                self.schedG.step()
+                    f" generator_train_loss={step_loss_g/self.batch}, discriminator_train_loss={step_loss_d/self.batch}")
+                self.sche_d.step()
+                self.sche_g.step()
 
-            train_loss_G /= len(self.trainset)
-            train_loss_D /= len(self.trainset)
-            self.history['train_loss_G_epoch'].append(train_loss_G)
-            self.history['train_loss_D_epoch'].append(train_loss_D)
+            train_loss_g /= len(self.train_set)
+            train_loss_d /= len(self.train_set)
+            self.history['train_loss_G_epoch'].append(train_loss_g)
+            self.history['train_loss_D_epoch'].append(train_loss_d)
             process.close()
 
             self.netD.eval()
@@ -197,8 +198,8 @@ class Trainer:
                 val_lg_loss += lg_loss
                 process.set_description(f"val_d_loss={val_ld_loss}, val_g_loss={val_lg_loss}")
 
-            val_lg_loss /= len(self.valset)
-            val_ld_loss /= len(self.valset)
+            val_lg_loss /= len(self.val_set)
+            val_ld_loss /= len(self.val_set)
             self.history['val_loss'].append(val_lg_loss)
             self.history['epoch'] += 1
             print(f"Epoch {self.history['epoch'] + 1}: "
@@ -211,8 +212,8 @@ class Trainer:
 
     def predict_image(self, image_path, dimension=256, noise_generator=fake_noise_model):
         device = self.device
-        netG = self.netG.to(device)
-        netG.eval()
+        net_g = self.netG.to(device)
+        net_g.eval()
         clean = cv2.imread(image_path)
         image = cv2.normalize(clean, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
         image = noise_generator(torch.from_numpy(image)).numpy()
@@ -233,7 +234,7 @@ class Trainer:
             im = cv2.normalize(patches[each: each + batch_size], None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX,
                                dtype=cv2.CV_32F)
             input_data = torch.from_numpy(im).to(device)
-            output_data = netG(input_data).cpu().detach().numpy()
+            output_data = net_g(input_data).cpu().detach().numpy()
             if result is None:
                 result = output_data
             else:
@@ -253,6 +254,38 @@ class Trainer:
                 new_image = np.concatenate((new_image, new_line), axis=0)
 
         return clean, image, new_image[:-padding_w, 0:-padding_h, :]
+
+    def predict_dir(self, dir_path, dimension=800, save_dir=None, noise_generator=fake_noise_model):
+        if save_dir is None:
+            save_dir = os.path.join(dir_path, 'save')
+        paths = []
+        save_paths = []
+        for root, dirs, files in os.walk(dir_path):
+            for f in files:
+                paths.append(os.path.join(root, f))
+                save_paths.append(os.path.join(save_dir, f))
+
+        os.makedirs(save_dir, exist_ok=True)
+
+        print(f'There are total {len(paths)} images')
+
+        device = self.device
+        net_g = self.netG.to(device)
+        net_g.eval()
+        clean_i = []
+        fake_i = []
+        gene_i = []
+        process = tqdm.tqdm(range(len(paths)))
+        for index in process:
+            each = paths[index]
+            clean, image, new_image = self.predict_image(each, dimension=dimension, noise_generator=noise_generator)
+            clean_i.append(clean)
+            fake_i.append(image)
+            gene_i.append(new_image)
+            im = np.clip(new_image * 255, 0, 255)
+            im = Image.fromarray(im.astype(np.uint8))
+            im.save(save_paths[index])
+        return clean_i, fake_i, gene_i
 
     def predict_batch_image(self, dir_path, dimension=128, save_dir=None, noise_generator=fake_noise_model,
                             skip_gene=False):

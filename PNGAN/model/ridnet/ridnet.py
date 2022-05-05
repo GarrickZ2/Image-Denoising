@@ -1,5 +1,5 @@
 import torch.nn as nn
-from PNGAN.model.ridnet import ops, common
+from model.ridnet import ops, common
 
 
 def make_model(args, parent=False):

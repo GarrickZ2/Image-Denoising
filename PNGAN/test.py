@@ -1,11 +1,10 @@
 import matplotlib
-
-matplotlib.use('TkAgg')
 import unittest
 from model.generator import *
 from model.discriminator import Discriminator
 from loss.loss import AlignmentLoss
 
+matplotlib.use('TkAgg')
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
