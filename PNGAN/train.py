@@ -320,3 +320,9 @@ class Trainer:
 
         for param in netG.parameters():
             param.requires_grad = True
+
+    def generator_predict(self, batch_data):
+        self.netG.eval()
+        result = self.netG(batch_data)
+        self.netG.train(mode=True)
+        return result
