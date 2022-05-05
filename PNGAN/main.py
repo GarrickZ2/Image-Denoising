@@ -26,7 +26,7 @@ optimizerG = optim.Adam(netG.parameters(), lr=2e-4, betas=(0.9, 0.9999))
 schedulerD = lr_scheduler.CosineAnnealingLR(optimizerD, T_max=int(3e4), eta_min=1e-6)
 schedulerG = lr_scheduler.CosineAnnealingLR(optimizerG, T_max=int(3e4), eta_min=1e-6)
 
-train_process = Trainer(netG, netD, train_ds, val_ds, criterion_d, criterion_g, performance, optimizerD, optimizerG, schedulerD, schedulerG, device)
+train_process = Trainer(netD, netG, train_ds, val_ds, criterion_d, criterion_g, performance, optimizerD, optimizerG, schedulerD, schedulerG, device)
 
 train_process.train('./', num_epochs=100)
 train_process.save('./')

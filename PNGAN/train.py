@@ -12,13 +12,12 @@ from PIL import Image
 
 
 class Trainer:
-    def __init__(self, netG, netD, train_set, val_set, criterion_d, criterion_g, performance, optimD, optimG, schedD, schedG, device, batch=8):
+    def __init__(self, net_d, net_g, train_set, val_set, criterion_d, criterion_g, optimD, optimG, schedD, schedG, device, batch=8):
         self.history = {
             'train_loss_G': [],
             'train_loss_D': [],
             'train_loss_G_epoch': [],
             'train_loss_D_epoch': [],
-            'performance': [],
             'val_loss': [],
             'epoch': 0,
             'best_val_loss': np.inf,
@@ -27,7 +26,6 @@ class Trainer:
         self.batch = batch
         self.criterion_d = criterion_d
         self.criterion_g = criterion_g
-        self.performance = performance
         self.trainset = train_set
         self.valset = val_set
         self.train_loader = DataLoader(train_set, batch_size=batch, shuffle=True, num_workers=4)
@@ -35,8 +33,8 @@ class Trainer:
         self.device = device
         self.optimG = optimG
         self.optimD = optimD
-        self.netD = netD
-        self.netG = netG
+        self.netD = net_d
+        self.netG = net_g
         self.schedG = schedG
         self.schedD = schedD
         self.ts = int(datetime.timestamp(datetime.now()))
@@ -59,7 +57,7 @@ class Trainer:
         loss_d = self.criterion_d(cd_irns, cd_ifns)
         loss_d.backward()
         self.optimD.step()
-        return loss_d.item(), ifns
+        return loss_d.item()
 
     def __val_step(self, irns, isyns, netG, netD):
         ifns = netG(isyns)
@@ -67,8 +65,7 @@ class Trainer:
         _, cd_ifns = netD(ifns)
         loss_d = self.criterion_d(cd_irns, cd_ifns)
         loss_g = self.criterion_g(irns, ifns, cd_irns, cd_ifns)
-        performance = self.performance(irns, ifns, loss_d, loss_g)
-        return loss_d.item(), loss_g.item(), performance.item()
+        return loss_d.item(), loss_g.item()
 
     def plot(self, dir_path, show=False):
         if not os.path.exists(f'{dir_path}/result'):
@@ -169,22 +166,17 @@ class Trainer:
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
                 step_loss_G = self.__train_generator_step(irns, isyns)
-                step_loss_D, ifns = self.__train_discriminator_step(irns, isyns)
+                step_loss_D = self.__train_discriminator_step(irns, isyns)
                 train_loss_G += step_loss_G
                 train_loss_D += step_loss_D
-                performance = self.performance(irns, ifns, step_loss_G, step_loss_D)
                 self.history['train_loss_G'] = step_loss_G / self.batch
                 self.history['train_loss_D'] = step_loss_D / self.batch
-                self.history['performance'] = performance / self.batch
 
                 process.set_description(
-                    f"Epoch {epoch + 1}:performance:{performance/self.batch},"
+                    f"Epoch {epoch + 1}:"
                     f" generator_train_loss={step_loss_G/self.batch}, discriminator_train_loss={step_loss_D/self.batch}")
                 self.schedD.step()
                 self.schedG.step()
-                if self.history['step'] % 2000 == 0:
-                    print('Saved the model for step', self.history['step'])
-                    self.save(dir_path)
 
             train_loss_G /= len(self.trainset)
             train_loss_D /= len(self.trainset)
@@ -196,28 +188,26 @@ class Trainer:
             self.netG.eval()
             val_ld_loss = 0.0
             val_lg_loss = 0.0
-            val_performance = 0.0
             process = tqdm.tqdm(self.val_loader)
             for i, (_, irns, isyns) in enumerate(process):
                 irns = irns.to(self.device)
                 isyns = isyns.to(self.device)
-                ld_loss, lg_loss, performance = self.__val_step(irns, isyns, self.netG, self.netD)
+                ld_loss, lg_loss= self.__val_step(irns, isyns, self.netG, self.netD)
                 val_ld_loss += ld_loss
                 val_lg_loss += lg_loss
-                val_performance += performance
+                process.set_description(f"val_d_loss={val_ld_loss}, val_g_loss={val_lg_loss}")
 
             val_lg_loss /= len(self.valset)
             val_ld_loss /= len(self.valset)
-            val_performance /= len(self.valset)
-            self.history['val_loss'].append(val_performance)
+            self.history['val_loss'].append(val_lg_loss)
             self.history['epoch'] += 1
             print(f"Epoch {self.history['epoch'] + 1}: "
-                  f"val_d_loss={val_ld_loss}, val_g_loss={val_lg_loss}, val_perf={val_performance}")
+                  f"val_d_loss={val_ld_loss}, val_g_loss={val_lg_loss}")
             if self.history['epoch'] % 1 == 0:
                 self.save(dir_path)
-            if val_performance < self.history['best_val_loss']:
+            if val_lg_loss < self.history['best_val_loss']:
                 self.save(dir_path, best=True)
-                self.history['best_val_loss'] = val_performance
+                self.history['best_val_loss'] = val_lg_loss
 
     def predict_image(self, image_path, dimension=256, noise_generator=fake_noise_model):
         device = self.device
