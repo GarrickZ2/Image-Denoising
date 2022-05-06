@@ -38,7 +38,7 @@ scheduler_d = lr_scheduler.CosineAnnealingLR(optimizer_d, T_max=int(args.lr_deca
 scheduler_g = lr_scheduler.CosineAnnealingLR(optimizer_g, T_max=int(args.lr_decay_step), eta_min=args.lr_min)
 
 train_process = Trainer(netD, netG, train_ds, val_ds, criterion_d, criterion_g, optimizer_d, optimizer_g,
-                        scheduler_d, scheduler_g, device, batch=args.batch_size)
+                        scheduler_d, scheduler_g, device, batch=args.batch_size, test_only=(args.test_only or args.generate))
 
 if args.load_models:
     if args.load_best:
@@ -49,6 +49,11 @@ if args.load_models:
 if args.test_only:
     train_process.predict_dir(args.testpath, args.predict_patch_size, args.savepath)
     exit(0)
+
+if args.generate:
+    train_process.predict_batch_image(args.testpath, args.predict_patch_size, args.savepath)
+    exit(0)
+
 
 train_process.train(args.save, num_epochs=args.epochs)
 

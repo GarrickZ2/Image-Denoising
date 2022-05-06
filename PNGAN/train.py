@@ -13,7 +13,7 @@ from dataset.dataset import fake_noise_model
 
 class Trainer:
     def __init__(self, net_d, net_g, train_set, val_set, criterion_d, criterion_g, optim_d, optim_g, sche_d, sche_g,
-                 device, batch=8):
+                 device, batch=8, test_only=False):
         self.history = {
             'train_loss_G': [],
             'train_loss_D': [],
@@ -29,8 +29,12 @@ class Trainer:
         self.criterion_g = criterion_g
         self.train_set = train_set
         self.val_set = val_set
-        self.train_loader = DataLoader(train_set, batch_size=batch, shuffle=True, num_workers=4)
-        self.val_loader = DataLoader(val_set, batch_size=batch, num_workers=4)
+        if not test_only:
+            self.train_loader = DataLoader(train_set, batch_size=batch, shuffle=True, num_workers=4)
+            self.val_loader = DataLoader(val_set, batch_size=batch, num_workers=4)
+        else:
+            self.train_loader = None
+            self.val_loader = None
         self.device = device
         self.optimG = optim_g
         self.optimD = optim_d

@@ -14,8 +14,11 @@ train_with_best:
 train_with_epoch:
 	cd PNGAN && python main.py --load_models --load_dir $(load_dir) --load_epoch $(epoch_num)
 
+generate_finetune:
+	cd PNGAN && python main.py --load_models --load_best --load_dir $(load_dir) --generate
+
 test_pngan_with_best:
-	cd PNGAN && python main.py --test_only --load_models --load_best --load_dir $(load_dir)
+	cd PNGAN && python main.py --test_only --load_models --load_best --load_dir $(load_dir) --testpath $(test_path) --savepath $(save_path)
 
 test_pngan_with_epoch:
 	cd PNGAN && python main.py --load_models --load_dir $(load_dir) --load_epoch $(epoch_num) --test_only

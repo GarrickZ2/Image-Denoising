@@ -121,6 +121,7 @@ parser.add_argument('--skip_threshold', type=float, default='1e6',
 parser.add_argument('--save', type=str, default='./', help='file name to save')
 parser.add_argument('--load_models', action='store_true', help='Load Pretrained Model')
 parser.add_argument('--load_best', action='store_true', help='Load the best model you trained')
+parser.add_argument('--generate', action='store_true', help='Load the best model you trained')
 parser.add_argument('--load_dir', type=str, default='.', help='Place you put your model')
 parser.add_argument('--timestamp', type=int, default=None, help='The timestamp for your model')
 parser.add_argument('--load_epoch', type=int, default=None, help='The Epoch You want to load')
