@@ -58,16 +58,15 @@ python evaluate.py -opt ./Denoising/Options/RealDenoising_Restormer.yml --pretra
 
  # (TODO: reorganize) Finetune Restormer Denoiser with Real and PNGAN Noisy Images
 
-1. First, follow the [installation instruction](https://github.com/swz30/Restormer/blob/main/INSTALL.md) provided by the official Restormer authors to install the depenedencies required to run Restormer.
+First, follow the [installation instruction](https://github.com/swz30/Restormer/blob/main/INSTALL.md) provided by the official Restormer authors to install the depenedencies required to run Restormer.
 
-2. Download the official pre-trained Restormer [models](https://drive.google.com/drive/folders/1Qwsjyny54RZWa7zC4Apg7exixLBo4uF0?usp=sharing) and place them in `./Restormer/Denoising/pretrained_models/`
-    - Optionally, you can also download the data from shell or notebook using the mirror we provided:
+Download the official pre-trained Restormer [models](https://drive.google.com/drive/folders/1Qwsjyny54RZWa7zC4Apg7exixLBo4uF0?usp=sharing) and place them in `./Restormer/Denoising/pretrained_models/`. Optionally, you can also download the data from shell or notebook using the mirror we provided:
 
 ```bash
 wget https://storage.googleapis.com/yy3185/real_denoising.pth -O ./Restormer/Denoising/pretrained_models/real_denoising.pth
 ```
 
-3. Download the training and validation data. We are using 128x128 RGB images.
+Download the training and validation data. We are using 128x128 RGB images.
 
 ```bash
 # These commands, along with the following commands, must run in the Restormer directory
@@ -79,17 +78,52 @@ wget https://storage.googleapis.com/yy3185/SIDD_val_patches.zip
 unzip -q SIDD_val_patches.zip -d ./Denoising/
 wget https://storage.googleapis.com/yy3185/PNGAN_train.zip
 unzip -q PNGAN_train.zip -d ./Denoising/
-# Move all real-noisy and fake-noisy training data to one folder
+# Copy all real-noisy and fake-noisy training data to one folder
 mkdir -p ./Denoising/Datasets/train/PNGAN+SIDD/input_crops/
-mkdir -p ./Denoising/Datasets/train/PNGAN+SIDD/target_crops
-mv ./Denoising/Datasets/train/PNGAN/input_crops/*.png ./Denoising/Datasets/train/PNGAN+SIDD/input_crops/
-mv ./Denoising/Datasets/train/SIDD/input_crops/*.png ./Denoising/Datasets/train/PNGAN+SIDD/input_crops/
-mv ./Denoising/Datasets/train/PNGAN/target_crops/*.png ./Denoising/Datasets/train/PNGAN+SIDD/target_crops/
-mv ./Denoising/Datasets/train/SIDD/target_crops/*.png ./Denoising/Datasets/train/PNGAN+SIDD/target_crops/
+mkdir -p ./Denoising/Datasets/train/PNGAN+SIDD/target_crops/
+cp -r ./Denoising/Datasets/train/PNGAN/input_crops/ ./Denoising/Datasets/train/PNGAN+SIDD/input_crops/
+cp -r ./Denoising/Datasets/train/SIDD/input_crops/ ./Denoising/Datasets/train/PNGAN+SIDD/input_crops/
+cp -r ./Denoising/Datasets/train/PNGAN/target_crops/ ./Denoising/Datasets/train/PNGAN+SIDD/target_crops/
+cp -r ./Denoising/Datasets/train/SIDD/target_crops/ ./Denoising/Datasets/train/PNGAN+SIDD/target_crops/
 ```
 
-4. Run the training command to start the training process, please note that most of the configuration parameters are specified in the configuration YAML file (e.g., number of steps, learning rate, batch size, metrics, etc.) so you may read the YAML file to find more about them. You may also change them to run properly in your compute (e.g., configure the number of GPUs).
+Run the training command to start the training process, please note that most of the configuration parameters are specified in the configuration YAML file (e.g., number of steps, learning rate, batch size, metrics, etc.) so you may read the YAML file to find more about them. You may also change them to run properly in your compute (e.g., configure the number of GPUs).
 
 ```bash
-python train.py -opt ./Denoising/Options/PNGANDenoising_Restormer.yml --pretrained_weights ./Denoising/pretrained_models/real_denoising.pth
+python train.py -opt ./Denoising/Options/PNGANRealDenoising_Restormer.yml --pretrained_weights ./Denoising/pretrained_models/real_denoising.pth
+```
+
+Then you may evaluate using the following script.
+
+```bash
+python evaluate.py -opt ./Denoising/Options/PNGANRealDenoising_Restormer.yml --pretrained_weights ./experiment/PNGANRealDenoising_Restormer/models/net_g_latest.pth
+```
+
+## (TODO: reorganize) Finetune Restormer Denoiser with Real and Gaussian Noisy Images
+
+As part of our ablation studies, we explore finetuning Restormer on the task of real noise denoising with data augmentation using simple Gaussian noise (as opposed to noise modeled by PNGAN). We generated additional clean-noise image pairs for training, by applying Gaussian noise ($\sigma=15$) on the [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) high-resolution image dataset.
+
+```bash
+# Download the additional training data
+wget https://storage.googleapis.com/yy3185/Gaussian_train.zip
+unzip -q Gaussian_train.zip -d ./Denoising/
+# Copy the data to the training folder
+mkdir -p ./Denoising/Datasets/train/Gaussian+SIDD/input_crops/
+mkdir -p ./Denoising/Datasets/train/Gaussian+SIDD/target_crops/
+cp -r ./Denoising/Datasets/train/Gaussian/input_crops/ ./Denoising/Datasets/train/Gaussian+SIDD/input_crops/
+cp -r ./Denoising/Datasets/train/SIDD/input_crops/ ./Denoising/Datasets/train/Gaussian+SIDD/input_crops/
+cp -r ./Denoising/Datasets/train/Gaussian/target_crops/ ./Denoising/Datasets/train/Gaussian+SIDD/target_crops/
+cp -r ./Denoising/Datasets/train/SIDD/target_crops/ ./Denoising/Datasets/train/Gaussian+SIDD/target_crops/
+```
+
+Run the training command as follows:
+
+```bash
+python train.py -opt ./Denoising/Options/GaussianRealDenoising_Restormer.yml --pretrained_weights ./Denoising/pretrained_models/real_denoising.pth
+```
+
+Evaluate using the following command:
+
+```bash
+python evaluate.py -opt ./Denoising/Options/GaussianRealDenoising_Restormer.yml --pretrained_weights ./experiment/GaussianRealDenoising_Restormer/models/net_g_latest.pth
 ```
