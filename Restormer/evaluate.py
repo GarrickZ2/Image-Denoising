@@ -11,7 +11,7 @@ from os import path as osp
 from basicsr.data import create_dataloader, create_dataset
 from basicsr.models import create_model
 from basicsr.utils import (get_env_info, get_root_logger, get_time_str, init_tb_logger,
-                           init_wandb_logger, set_random_seed)
+                           mkdir_and_rename, make_exp_dirs, init_wandb_logger, set_random_seed)
 from basicsr.utils.dist_util import get_dist_info, init_dist
 from basicsr.utils.options import dict2str, parse
 
@@ -98,6 +98,9 @@ def main():
     torch.backends.cudnn.benchmark = True
     # torch.backends.cudnn.deterministic = True
 
+    make_exp_dirs(opt)
+    if opt['logger'].get('use_tb_logger') and 'debug' not in opt['name'] and opt['rank'] == 0:
+      mkdir_and_rename(osp.join('tb_logger', opt['name']))
     # initialize loggers
     logger, tb_logger = init_loggers(opt)
 
