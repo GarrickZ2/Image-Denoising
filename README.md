@@ -68,13 +68,13 @@ To generate synthetic clean-noisy image pairs for denoiser finetuning, we select
 Figure 5. Denoising result by our finetuned Restormer model (clean, real noisy, denoised)
 </p>
 
-In benchmarks, we observed encouraging results in applying PNGAN's synthetic noisy data to finetune the Restormer denoising model. Overall, we observed meaningful performance increase in both PSNR (peak signal-to-noise ratio) and SSIM (structural simmilarity index measure) after finetuning Restormer with PNGAN-noise. To prove the effectiveness of our noise model, we also included benchmarks of the model finetuned with Gaussian noise augmented data, which shows that Gaussian noise augmentation actually degrades the performance of the original denoising model, proving that real noise distribution cannot be approximated with simple Gaussian noise.
+In benchmarks, we observed encouraging results in applying PNGAN's synthetic noisy data to finetune the Restormer denoising model. Overall, we observed meaningful performance increase in both PSNR (peak signal-to-noise ratio) and SSIM (structural simmilarity index measure) after finetuning Restormer with PNGAN-noise. To prove the effectiveness of our noise model, we also included benchmarks of the model finetuned with Gaussian noise augmented data, which shows that Gaussian noise augmentation actually degrades the performance of the original denoising model, suggesting that real noise distribution cannot be approximated with simple Gaussian noise.
 
 |Methods|PSNR|SSIM|
 |:---|:---:|:---:|
 |[Restormer](https://github.com/swz30/Restormer)|40.0155|0.9602|
 |[Restormer finetuned with Gaussian Noise (sigma=15)](https://storage.googleapis.com/yy3185/gaussian_finetuned_restormer.pth)|39.9931|0.9601|
-|[Restormer fintuned with PNGAN Noise](https://storage.googleapis.com/yy3185/pngan_finetuned_restormer.pth)|**40.0205**|**0.9603**|
+|[Restormer finetuned with PNGAN Noise](https://storage.googleapis.com/yy3185/pngan_finetuned_restormer.pth)|**40.0205**|**0.9603**|
 
 ## Environment Configuration
 
