@@ -1,6 +1,8 @@
 close all;clear all;
 
-denoised = load('./results/Real_Denoising/SIDD/mat/Idenoised.mat');
+% denoised = load('./results/Real_Denoising/SIDD/mat/real_denoising_sidd_test.mat');
+% denoised = load('./results/PNGANReal_Denosing/SIDD/mat/pngan_denoising_sidd_test.mat');
+denoised = load('./results/GaussianReal_Denoising/SIDD/mat/gaussian_denoising_sidd_test.mat');
 gt = load('./Datasets/test/SIDD/ValidationGtBlocksSrgb.mat');
 
 denoised = denoised.Idenoised;
