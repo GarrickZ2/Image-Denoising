@@ -6,6 +6,20 @@ Project Member: Yifan Yang (yy3185) / Zixuan Zhang (zz2888)
 
 Affliation: Columbia Univeristy
 
+### Table of contents
+1. [Project Description](#Project-Description)
+2. [Repository Description](#Repository-Description)
+3. [Example and Results](#Example-and-Results)
+4. [Environment Configuration](#Environment-Configuration)
+5. [Quick Start](#Quick-Start)
+6. [Dataset Preparation](#Dataset-Preparation)
+7. [Train on PNGAN](#Train-on-PNGAN)
+8. [Test on PNGAN](#Test-on-PNGAN)
+8. [FineTune Restormer](#FineTune-Restormer)
+8. [Test Finetuned Restormer](#Test-Finetuned-Restormer)
+8. [Contribution](#Contribution)
+8. [References](#References)
+
 ## Project Description
 
 Image denoising has a wide range of applications ranging from consumer electronics to medical imaging devices. Neural methods has enjoyed great success in real noise removal in high-resolution images. However, training complex neural networks often require large amount of clean-noisy image pairs that properly models the underlying noise distribution. In addition, image denoising is not easily self-supervised due to the complex nature of the real-world image noise. Unfortunately, training data for image denoising has been notoriously difficult and expensive to gather, with the most notable denoising dataset being [SIDD](https://www.eecs.yorku.ca/~kamel/sidd/benchmark.php) and [DND](https://noise.visinf.tu-darmstadt.de/). Neither SIDD and DND are very large datasets: SIDD contains 160 scenes with 150 very similar clean-noisy image pairs for each scene captured using smartphones, and DND contains 50 clean-noisy image pairs captured using consumer-grade cameras.
@@ -47,6 +61,22 @@ Figure 3. The architecture of <a href="https://arxiv.org/pdf/2111.09881.pdf">Zam
 </p>
 
 ## Repository Description
+- Root
+  - Coordinator  # Contains the source code for self-impl parameter server
+  - images  # Contains the images for readme file
+  - PNGAN  # Project directory for PNGAN model
+    - main.py # Main script for running the proj;
+    - train.py # Trainer Class for training and testing
+    - dataset # Contains code for dataset and dataloader
+    - experiment # Store the trained model, log and config
+    - layer  # Contains self-imple torch neural layers
+    - loss  # Self-impl loss function (class)
+    - model  # Contains the model impl for generator and discriminator
+    - util  # Useful tools including download data, data preprocessing, etc.
+  - Restomer  # The [Restormer git repo](https://github.com/swz30/Restormer)
+  - Makefile  # Contains the auto run file to quick start the project
+  - PNGAN_Demo_Visualization  # Jupyter notebook example to visualize PNGAN
+  - Restormer_Demo_Visualization  # Jupyter notebook to visualize restormer
 
 ## Example and Results
 
@@ -101,10 +131,10 @@ make gdrive
 After running the command gdrive about, you need to enter a link and finish the authentication to login a google account, so that you can use google drive services.
 
 ### Install Python Environment
-
-
-
-
+All the required python packages and relevant version is in requirements.txt
+```bash
+pip install -r requirements.txt
+```
 
 ## Quick Start
 
@@ -297,14 +327,17 @@ cd ./Restormer/
 # Download and unzip real-noisy and fake-noisy training data, and real-noisy validation data
 wget https://storage.googleapis.com/yy3185/SIDD_train_patches.zip
 unzip -q SIDD_train_patches.zip -d ./Denoising/
+
 wget https://storage.googleapis.com/yy3185/SIDD_val_patches.zip
 unzip -q SIDD_val_patches.zip -d ./Denoising/
+
 wget https://storage.googleapis.com/yy3185/PNGAN_train.zip
 unzip -q PNGAN_train.zip -d ./Denoising/
 
 # Copy all real-noisy and fake-noisy training data to one folder
 mkdir -p ./Denoising/Datasets/train/PNGAN+SIDD/input_crops/
 mkdir -p ./Denoising/Datasets/train/PNGAN+SIDD/target_crops/
+
 cp -r ./Denoising/Datasets/train/PNGAN/input_crops/ ./Denoising/Datasets/train/PNGAN+SIDD/input_crops/
 cp -r ./Denoising/Datasets/train/SIDD/input_crops/ ./Denoising/Datasets/train/PNGAN+SIDD/input_crops/
 cp -r ./Denoising/Datasets/train/PNGAN/target_crops/ ./Denoising/Datasets/train/PNGAN+SIDD/target_crops/
@@ -339,6 +372,7 @@ unzip -q Gaussian_train.zip -d ./Denoising/
 # Copy the data to the training folder
 mkdir -p ./Denoising/Datasets/train/Gaussian+SIDD/input_crops/
 mkdir -p ./Denoising/Datasets/train/Gaussian+SIDD/target_crops/
+
 cp -r ./Denoising/Datasets/train/Gaussian/input_crops/ ./Denoising/Datasets/train/Gaussian+SIDD/input_crops/
 cp -r ./Denoising/Datasets/train/SIDD/input_crops/ ./Denoising/Datasets/train/Gaussian+SIDD/input_crops/
 cp -r ./Denoising/Datasets/train/Gaussian/target_crops/ ./Denoising/Datasets/train/Gaussian+SIDD/target_crops/
@@ -361,7 +395,7 @@ Evaluate using the following command:
 python evaluate.py -opt ./Denoising/Options/GaussianRealDenoising_Restormer.yml --pretrained_weights ./experiment/GaussianRealDenoising_Restormer/models/net_g_latest.pth
 ```
 
-## Test Fintuned Restormer
+## Test Finetuned Restormer
 
 To establish our baseline, we show the performance of the pre-trained Restormer denoiser on the [SIDD real-noisy dataset](https://www.eecs.yorku.ca/~kamel/sidd/dataset.php). The original evaluation [script](https://github.com/swz30/Restormer/blob/main/Denoising/evaluate_sidd.m) calls for Matlab, but we provided a Python alternative.
 
@@ -386,7 +420,15 @@ python evaluate.py -opt ./Denoising/Options/RealDenoising_Restormer.yml --pretra
 ```
 
 ## Contribution
+1. Implement the PNGAN code, train the model and provide our pretrained models on GitHub. Provide easy scripts for others to re-run.
 
+2. Provide a method to conduct data augmentation with less confidential augmentation images for fine-tune a model.
 
+3. Provide a solution (falsk parameter server ) and codes for students (lack computation power) to corroborate GPU between Google Colab sessions. The server is robust and easy to configured.
+
+4. We fine-tuned the restormer and successfully improve the performance. We proved that our assumption of lack data training and our data augmentation method is valid.
 
 ## References
+[1] Zamir, Syed Waqas, et al. "Restormer: Efficient Transformer for High-Resolution Image Restoration." arXiv preprint arXiv:2111.09881 (2021).
+[2] Cai, Yuanhao, et al. "Learning to generate realistic noisy images via pixel-level noise-aware adversarial training." Advances in Neural Information Processing Systems 34 (2021).
+[3] Anwar, Saeed, and Nick Barnes. "Real image denoising with feature attention." Proceedings of the IEEE/CVF international conference on computer vision. 2019.
