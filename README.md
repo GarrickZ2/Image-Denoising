@@ -22,13 +22,13 @@ Affliation: Columbia Univeristy
 
 ## Project Description
 
-Image denoising has a wide range of applications ranging from consumer electronics to medical imaging devices. Neural methods has enjoyed great success in real noise removal in high-resolution images. However, training complex neural networks often require large amount of clean-noisy image pairs that properly models the underlying noise distribution. In addition, image denoising is not easily self-supervised due to the complex nature of the real-world image noise. Unfortunately, training data for image denoising has been notoriously difficult and expensive to gather, with the most notable denoising dataset being [SIDD](https://www.eecs.yorku.ca/~kamel/sidd/benchmark.php) and [DND](https://noise.visinf.tu-darmstadt.de/). Neither SIDD and DND are very large datasets: SIDD contains 160 scenes with 150 very similar clean-noisy image pairs for each scene captured using smartphones, and DND contains 50 clean-noisy image pairs captured using consumer-grade cameras.
+Image denoising has various applications ranging from consumer electronics to medical imaging devices. Neural methods have enjoyed great success in real noise removal in high-resolution images. However, training complex neural networks often require many clean-noisy image pairs that correctly model the underlying noise distribution. In addition, image denoising is not easily self-supervised due to the complex nature of real-world image noise. Unfortunately, training data for image denoising has been notoriously difficult and expensive to gather, with the most notable denoising datasets being [SIDD](https://www.eecs.yorku.ca/~kamel/sidd/benchmark.php) and [DND](https://noise.visinf.tu-darmstadt.de/). Neither SIDD nor DND are large datasets: SIDD contains 160 scenes with 150 similar clean-noisy image pairs for each scene captured using smartphones, and DND contains 50 clean-noisy image pairs captured using consumer-grade cameras.
 
-Data augmentation methods in training neural networks have been proven to be helpful in improving the robustness of a model by increasing the diversity in data. Surprisingly, data augmentation in generating synthetic noisy training data has been quite difficult because real-world noise cannot be easily approximated. Naive approaches such as adding *additive white Gaussian noise* (AWGN) usually does not help improve the model performance because real-world noise is fundamentally a different distribution than Gaussian.
+Data augmentation methods in training neural networks have been proven to help improve the robustness of a model by increasing the diversity in data. Surprisingly, data augmentation in generating synthetic noisy training data has been quite tricky because real-world noise cannot be easily approximated. Naive approaches such as adding *additive white Gaussian noise* (AWGN) usually do not help improve the model performance because real-world noise is fundamentally a different distribution than Gaussian.
 
 [Brooks et al.](https://openaccess.thecvf.com/content_CVPR_2019/papers/Brooks_Unprocessing_Images_for_Learned_Raw_Denoising_CVPR_2019_paper.pdf) and [Zamir et al.](https://arxiv.org/pdf/2003.07761.pdf) proposed noise-synthesizing methods that attempts to generate realistic noise by first converting an RGB image to a RAW image, before a non-neural RAW noise model is applied and the image is converted back to RGB. 
 
-Taking it one step further, [Cai et al.](https://openreview.net/pdf?id=Wua2zjxJdYo) took a neural approach in realistic noise modeling and achieved impressive and ground-breaking results. They proposed a GAN architecture, namely PNGAN, in which they train a generator that learns to generate realistic noise from AWGN, and a discriminator that learns to distinguish between real noise and synthetic noise. Cai et al. trained their GAN using real-noisy training data (SIDD and DND) and generated synthetic noisy-clean image pairs from high-resolution image datasets including [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) and [Flickr2K](https://openaccess.thecvf.com/content_cvpr_2017_workshops/w12/papers/Lim_Enhanced_Deep_Residual_CVPR_2017_paper.pdf). They finetuned existing denoising models using a mixture of real-noisy data and synthetic-noisy data and observed noticeable improvements.
+Taking it one step further, [Cai et al.](https://openreview.net/pdf?id=Wua2zjxJdYo) took a neural approach to realistic noise modeling and achieved impressive and ground-breaking results. They proposed a GAN architecture, namely PNGAN. They train a generator that learns to generate real noise from AWGN and a discriminator that distinguishes between real and synthetic noise. Cai et al. trained their GAN using real-noisy training data (SIDD and DND) and generated synthetic noisy-clean image pairs from high-resolution image datasets, including [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) and [Flickr2K](https://openaccess.thecvf.com/content_cvpr_2017_workshops/w12/papers/Lim_Enhanced_Deep_Residual_CVPR_2017_paper.pdf). They finetuned existing denoising models using a mixture of real-noisy data and synthetic-noisy data and observed noticeable improvements.
 
 <p align = "center">
 <img src="./images/pngan.jpg" width=70%/>
@@ -81,7 +81,7 @@ Figure 3. The architecture of <a href="https://arxiv.org/pdf/2111.09881.pdf">Zam
 
 ## Example and Results
 
-To train our PNGAN models, we applied similar hyper-parameter settings provided by Cai et al. We trained both the generator and denoiser using the SIDD dataset, and for synthetic noise settings, we simply used the setting1 proposed by the paper. We used the same 128x128 patch setting provided by Cai et al., and we trained the model using a batch size of 8 for 60,000 iterations using Adam optimizer and cosine annealing learning rate scheduler with the same learning rate setting. All the models are trained on a single NVIDIA V100 GPU. The following figure shows an example of the synthetic noise generation.
+To train our PNGAN models, we applied similar hyper-parameter settings provided by Cai et al. We trained both the generator and denoiser using the SIDD dataset. For synthetic noise settings, we used the setting1 proposed by the paper. We used the same 128x128 patch setting provided by Cai et al. We trained the model using a batch size of 8 for 60,000 iterations using Adam optimizer and cosine annealing learning rate scheduler with the same learning rate setting. All the models are trained on a single NVIDIA V100 GPU. The following figure shows an example of synthetic noise generation.
 
 <p align = "center">
 <img src="./images/PNGAN_synthetic_noise_example.png" width=90%/>
@@ -164,7 +164,7 @@ We generated synthetic clean-noisy image pairs using our trained PNGAN model fro
 
 ### Upload Test Images
 
-Upload your test images (for noise generating or denoising) into the ./test directory. Resutls will saved at the ./save directory.
+Upload your test images (for noise generating or denoising) into the ./test directory. Results will be saved in the ./save directory.
 
 ### Generate Test Results
 
@@ -174,10 +174,10 @@ Upload your test images (for noise generating or denoising) into the ./test dire
 make test_pngan_with_best load_dir="../experiment/PNGAN"
 ```
 
-The result will be saved at ./save/noise_gene directory.
+The results will be saved in ./save/noise_gene directory.
 #### Generate the denoised images
 
-For easy visualization, please refer to our [Restormer demo Colab notebook](https://colab.research.google.com/drive/1HOwZcm8TlgS367nNS-fT6zJPUoRdZ_5_?usp=sharing). You would otherwise refer to the original [Restormer README](https://github.com/swz30/Restormer/blob/main/Denoising/README.md#training-1) for detailed descriptions on how to run Restormer denoiser. We provided our Restormer model checkpoint in previous sections.
+For easy visualization, please refer to our [Restormer demo Colab notebook](https://colab.research.google.com/drive/1HOwZcm8TlgS367nNS-fT6zJPUoRdZ_5_?usp=sharing). Otherwise, you would refer to the original [Restormer README](https://github.com/swz30/Restormer/blob/main/Denoising/README.md#training-1) for detailed descriptions on how to run Restormer denoiser. We provided our Restormer model checkpoint in previous sections.
 
 ## Dataset Preparation
 
@@ -347,7 +347,7 @@ cp -r ./Denoising/Datasets/train/SIDD/target_crops/ ./Denoising/Datasets/train/P
 
 
 
-Run the training command to start the training process, please note that most of the configuration parameters are specified in the configuration YAML file (e.g., number of steps, learning rate, batch size, metrics, etc.) so you may read the YAML file to find more about them. You may also change them to run properly in your compute (e.g., configure the number of GPUs).
+Run the training command to start the training process. Please note that most of the configuration parameters are specified in the configuration YAML file (e.g., number of steps, learning rate, batch size, metrics, etc.), so you may read the YAML file to find more. You may also change them to run correctly in your compute (e.g., configure the number of GPUs).
 
 ```bash
 python train.py -opt ./Denoising/Options/PNGANRealDenoising_Restormer.yml --pretrained_weights ./Denoising/pretrained_models/real_denoising.pth
@@ -423,11 +423,11 @@ python evaluate.py -opt ./Denoising/Options/RealDenoising_Restormer.yml --pretra
 ## Contribution
 1. Implement the PNGAN code, train the model and provide our pretrained models on GitHub. Provide easy scripts for others to re-run.
 
-2. Provide a method to conduct data augmentation with less confidential augmentation images for fine-tune a model.
+2. Provide a method to conduct data augmentation with less confidential images for fine-tuning a model.
 
-3. Provide a solution (falsk parameter server ) and codes for students (lack computation power) to corroborate GPU between Google Colab sessions. The server is robust and easy to configured.
+3. Provide a solution (flask parameter server ) and codes for students (lack computation power) to corroborate GPU between Google Colab sessions. The server is robust and easy to configure.
 
-4. We fine-tuned the restormer and successfully improve the performance. We proved that our assumption of lack data training and our data augmentation method is valid.
+4. We fine-tuned the restormer and successfully improved the performance. We proved that our assumption of a lack data training and our data augmentation method is valid.
 
 ## References
 [1] Abdelhamed, A., Lin, S., & Brown, M. S. (2018). A high-quality denoising dataset for smartphone cameras. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (pp. 1692-1700).
