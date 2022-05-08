@@ -77,6 +77,7 @@ Figure 3. The architecture of <a href="https://arxiv.org/pdf/2111.09881.pdf">Zam
   - Makefile  # Contains the auto run file to quick start the project
   - PNGAN_Demo_Visualization  # Jupyter notebook example to visualize PNGAN
   - Restormer_Demo_Visualization  # Jupyter notebook to visualize restormer
+  - requirements.txt # Contains the required python packages and version
 
 ## Example and Results
 
