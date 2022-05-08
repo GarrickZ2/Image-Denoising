@@ -430,6 +430,14 @@ python evaluate.py -opt ./Denoising/Options/RealDenoising_Restormer.yml --pretra
 4. We fine-tuned the restormer and successfully improve the performance. We proved that our assumption of lack data training and our data augmentation method is valid.
 
 ## References
-[1] Zamir, Syed Waqas, et al. "Restormer: Efficient Transformer for High-Resolution Image Restoration." arXiv preprint arXiv:2111.09881 (2021).
-[2] Cai, Yuanhao, et al. "Learning to generate realistic noisy images via pixel-level noise-aware adversarial training." Advances in Neural Information Processing Systems 34 (2021).
-[3] Anwar, Saeed, and Nick Barnes. "Real image denoising with feature attention." Proceedings of the IEEE/CVF international conference on computer vision. 2019.
+[1] Abdelhamed, A., Lin, S., & Brown, M. S. (2018). A high-quality denoising dataset for smartphone cameras. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (pp. 1692-1700).
+
+[2] Plotz, T., & Roth, S. (2017). Benchmarking denoising algorithms with real photographs. In Proceedings of the IEEE conference on computer vision and pattern recognition (pp. 1586-1595).
+
+[3] Zamir, S. W., Arora, A., Khan, S., Hayat, M., Khan, F. S., Yang, M. H., & Shao, L. (2020). Cycleisp: Real image restoration via improved data synthesis. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (pp. 2696-2705).
+
+[4] Brooks, T., Mildenhall, B., Xue, T., Chen, J., Sharlet, D., & Barron, J. T. (2019). Unprocessing images for learned raw denoising. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (pp. 11036-11045).
+
+[5] Cai, Y., Hu, X., Wang, H., Zhang, Y., Pfister, H., & Wei, D. (2021). Learning to generate realistic noisy images via pixel-level noise-aware adversarial training. Advances in Neural Information Processing Systems, 34.
+
+[6] Anwar, Saeed, and Nick Barnes. "Real image denoising with feature attention." Proceedings of the IEEE/CVF international conference on computer vision. 2019.
